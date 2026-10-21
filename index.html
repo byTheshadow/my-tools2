@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>捏寿司 · 像素寿司屋</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+  <div id="hud"><span id="score">★ 0</span><span class="mid" id="combo"></span><span id="time">⏱ 90</span><button id="mute" aria-label="静音">♪</button></div>
+  <div id="hint"></div>
+  <div id="fx"></div>
+  <div id="ov"><div class="panel" id="panel"></div></div>
+</div>
+
+<!-- 加载顺序很重要：后面的文件会用到前面的 -->
+<script src="js/config.js"></script>
+<script src="js/data/ingredients.js"></script>
+<script src="js/data/levels.js"></script>
+<script src="js/data/customers.js"></script>
+<script src="js/util.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/state.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/draw/primitives.js"></script>
+<script src="js/draw/sprites.js"></script>
+<script src="js/draw/scene.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/input.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
