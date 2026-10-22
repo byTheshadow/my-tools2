@@ -158,10 +158,60 @@ canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
 .lv-back{position:absolute;left:50%;bottom:calc(var(--s)*9px);transform:translateX(-50%)}
 .lv-back:active{transform:translateX(-50%) translateY(calc(var(--s)*1px))}
 
+/* 首页 / 选关里的资金 */
+.foot .neg{color:var(--red)}
+.night.cur{border-left-color:var(--gold);background:rgba(52,38,48,.92)}
+
+/* ================= 结算页：账本 ================= */
+.lg{display:flex;flex-direction:column;align-items:center}
+.lg-head{font-size:calc(var(--s)*16px);line-height:1.15;color:var(--cream);text-shadow:calc(var(--s)*2px) calc(var(--s)*2px) 0 #c8332c}
+.lg-head.bad{font-size:calc(var(--s)*13px)}
+.lg-score{margin:calc(var(--s)*4px) 0 calc(var(--s)*6px);font-size:calc(var(--s)*7px);color:var(--gold)}
+.lg-head.bad + .paper{margin-top:calc(var(--s)*8px)}
+.paper{position:relative;width:calc(var(--s)*152px);margin-top:calc(var(--s)*2px);text-align:left;color:#2a1e18;
+  background:#efe3c6;border:calc(var(--s)*1px) solid var(--ink);box-shadow:calc(var(--s)*3px) calc(var(--s)*3px) 0 #0c0810;
+  padding:0 calc(var(--s)*8px) calc(var(--s)*5px)}
+.paper::before{content:"";position:absolute;left:calc(var(--s)*4px);top:calc(var(--s)*13px);bottom:0;width:calc(var(--s)*1px);background:#dcb2a4}
+.paper-top{display:flex;justify-content:space-between;align-items:center;margin:0 calc(var(--s)*-8px) calc(var(--s)*4px);
+  padding:calc(var(--s)*2.5px) calc(var(--s)*8px);background:#7d2a26;color:#f4e6c4;font-size:calc(var(--s)*6px);line-height:1.2}
+.paper-top span:last-child{color:#d9a76a;font-size:calc(var(--s)*5px)}
+.rw{display:flex;align-items:baseline;gap:calc(var(--s)*3px);font-size:calc(var(--s)*7px);line-height:1.6;
+  animation:rowIn .32s steps(4) both;animation-delay:var(--d,0s)}
+.rw i{flex:1;min-width:calc(var(--s)*6px);border-bottom:calc(var(--s)*1px) dotted #b59e6c;transform:translateY(calc(var(--s)*-2px))}
+.rw b{font-weight:normal;font-variant-numeric:tabular-nums}
+.rw.inc{padding-left:calc(var(--s)*6px);font-size:calc(var(--s)*5.5px);line-height:1.55;color:#7a6a50}
+.rw.total{position:relative;margin-top:calc(var(--s)*1px);font-size:calc(var(--s)*9px);line-height:1.5}
+.rw.bal{font-size:calc(var(--s)*7px)}
+.paper .pos{color:#2b6a3d}
+.paper .neg{color:#a5302a}
+.rule{height:calc(var(--s)*3px);margin:calc(var(--s)*2px) 0;border-top:calc(var(--s)*1px) solid #2a1e18;border-bottom:calc(var(--s)*1px) solid #2a1e18;
+  animation:rowIn .32s steps(4) both;animation-delay:var(--d,0s)}
+.lg-tight{margin-top:calc(var(--s)*3px);font-size:calc(var(--s)*6px);color:#a5302a;text-align:center;
+  animation:rowIn .32s steps(4) both;animation-delay:var(--d,0s)}
+.stamp{position:absolute;right:calc(var(--s)*40px);top:50%;margin-top:calc(var(--s)*-13px);display:flex;align-items:center;justify-content:center;
+  width:calc(var(--s)*26px);height:calc(var(--s)*26px);font-size:calc(var(--s)*16px);line-height:1;
+  border:calc(var(--s)*2px) solid currentColor;outline:calc(var(--s)*1px) solid currentColor;outline-offset:calc(var(--s)*-4px);
+  mix-blend-mode:multiply;opacity:.92;pointer-events:none;transform:rotate(-11deg);animation:stampIn .4s steps(5) both;animation-delay:var(--d,0s)}
+.stamp.two{font-size:calc(var(--s)*10px);letter-spacing:0;writing-mode:horizontal-tb}
+.stamp.good{color:#2b6a3d}
+.stamp.bad{color:#b3302a}
+.paper.shut .paper-top{background:#4a3f52}
+.lg .stats{margin:calc(var(--s)*8px) 0 calc(var(--s)*8px);font-size:calc(var(--s)*6px)}
+.lg .says{margin:calc(var(--s)*8px) auto calc(var(--s)*4px);width:calc(var(--s)*140px)}
+.lg-note{margin:0 0 calc(var(--s)*8px);font-size:calc(var(--s)*6px);line-height:1.6;color:#d9c9ae}
+.lg .levels{gap:calc(var(--s)*7px)}
+@keyframes rowIn{from{opacity:0;transform:translateX(calc(var(--s)*-5px))}to{opacity:1;transform:none}}
+@keyframes stampIn{
+  0%{opacity:0;transform:rotate(-24deg) scale(2.4)}
+  60%{opacity:.95;transform:rotate(-11deg) scale(.92)}
+  100%{opacity:.88;transform:rotate(-11deg) scale(1)}
+}
+
 @media (prefers-reduced-motion: reduce){
   .pop{animation-duration:.6s}
   .btn.pulse,.logo,.tap{animation:none}
   .tap{opacity:1}
   .tagline{animation:none;opacity:1}
   .lore p{animation-duration:.01s;animation-delay:0s!important}
+  .rw,.rule,.lg-tight,.stamp{animation:none}
 }

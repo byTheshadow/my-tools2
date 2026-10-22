@@ -21,6 +21,7 @@
       G.fallen.push({ type: d.type, x: d.x, y: target, vx: Math.sign(d.dx) * 35, vy: 40, life: .7 });
       G.dropSlice = null; G.phase = 'fish';
       pop('没放上！', RICE.x, RICE.y - 30, 'bad', 8); SG.noise(.1, .06); c.api.breakCombo(); G.shake = 2;
+      SG.econ.fishMiss(d.type);               // 鱼片掉了，记一半成本
       c.ev('fail');
       return;
     }

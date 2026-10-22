@@ -116,6 +116,7 @@
     G.unlocked = L.startIngredients.slice();
     G.seats = CFG.seats.map((_, i) => newSeat(i, L.difficulty.firstSeatDelays[i] ?? 1));
     G.particles = []; G.fallen = []; G.flying = []; G.dropSlice = null; G.lockT = 0;
+    SG.econ.begin(L);                        // 清空账本；只有"当前这一夜"才真正记账
     fillBelt();
     G.mode = 'play';
     if (L.tutorial) SG.tutorial.start(); else SG.tutorial.stop();
@@ -134,8 +135,9 @@
     }
     const isBest = G.score > G.best;
     if (isBest) { G.best = G.score; SG.saveBest(); }
+    const ledger = SG.econ.close();          // 算账：入账 / 闭店回档 / Game Over（练习夜为 null）
     SG.save.write();                         // 图鉴等累计数据
-    SG.ui.showOver(isBest);
+    SG.ui.showOver(isBest, ledger);
   }
 
   // ---------- 输入：转交给当前步骤 ----------

@@ -26,10 +26,13 @@
 
   // ---------- 进度 ----------
   const bestOf = L => sv().bestByNight[L.id] || 0;
-  const clearedCount = () => SG.LEVELS.filter(L => bestOf(L) > 0).length;
-  const isOpen = i => i === 0 || bestOf(SG.LEVELS[i - 1]) > 0;
-  // 下一个要营业的夜：第一个还没通关的；全通关了就是最后一夜
-  function currentIndex() { let i = 0; while (i < SG.LEVELS.length - 1 && bestOf(SG.LEVELS[i]) > 0) i++; return i; }
+  // 夜数以存档里的 night 为准（打烊没闭店才会往前走）；闭店回档不会让夜数前进
+  const clearedCount = () => Math.max(0, sv().night - 1);
+  const isOpen = i => i < sv().night;
+  const currentIndex = () => Math.min(Math.max(sv().night, 1), SG.LEVELS.length) - 1;
+  const fmt = n => (n < 0 ? '−' : '') + '¥' + Math.abs(Math.round(n)).toLocaleString('en-US');
+  const sgn = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString('en-US');
+  const absn = n => Math.abs(Math.round(n)).toLocaleString('en-US');
   function starsOf(L, score) {
     if (!score) return 0;
     let idx = 0; L.ranks.forEach((r, i) => { if (score >= r.min) idx = i; });
@@ -62,7 +65,7 @@
           <button class="btn small ghost" data-act="howto">玩法说明</button>
           <button class="btn small ghost" data-act="levels">关　卡</button>
         </div>
-        <div class="foot">第 ${i + 1} 夜　已营业 ${clearedCount()} / ${CFG.run.totalNights} 夜</div>
+        <div class="foot">第 ${i + 1} 夜　资金 <span class="${sv().money < 0 ? 'neg' : ''}">${fmt(sv().money)}</span></div>
       </div>
     </div>`;
     const el = $('tag'); let n = 0;
@@ -97,14 +100,15 @@
       } else if (!isOpen(i)) {
         rows.push(`<div class="night locked"><b class="no">${i + 1}</b><span class="nm">${nightName(L)}</span><span class="meta"><em>通关上一夜解锁</em></span></div>`);
       } else {
-        const best = bestOf(L);
-        rows.push(`<button class="night" data-act="play" data-level="${i}"><b class="no">${i + 1}</b><span class="nm">${nightName(L)}</span>
-          <span class="meta"><span class="stars">${starStr(starsOf(L, best))}</span><em>${best ? best + ' 分' : '未营业'}</em></span></button>`);
+        const best = bestOf(L), cur = i === currentIndex();
+        const em = cur ? `房租 ${fmt(L.rent || 0)}` : best ? `${best} 分 · 练习` : '练习';
+        rows.push(`<button class="night${cur ? ' cur' : ''}" data-act="play" data-level="${i}"><b class="no">${i + 1}</b><span class="nm">${nightName(L)}</span>
+          <span class="meta"><span class="stars">${starStr(starsOf(L, best))}</span><em>${em}</em></span></button>`);
       }
     }
     panel.innerHTML = `<div class="scr levels">
       <div class="lv-title">关　卡</div>
-      <div class="lv-sub">已营业 ${clearedCount()} / ${CFG.run.totalNights} 夜</div>
+      <div class="lv-sub">已营业 ${clearedCount()} / ${CFG.run.totalNights} 夜　资金 ${fmt(sv().money)}　重做 ${Math.max(0, CFG.run.retryMax - sv().retries)} 次</div>
       <div class="nights">${rows.join('')}</div>
       <button class="btn small ghost lv-back" data-act="back">返回</button>
     </div>`;
@@ -123,27 +127,101 @@
   // 第一次开店先上教学夜
   const startCurrent = () => sv().seenTutorial ? SG.game.start(SG.LEVELS[currentIndex()]) : SG.game.start(SG.TUTORIAL_LEVEL);
 
-  // ---------- 结算页 ----------
-  function showOver(isBest) {
-    const L = G.level;
-    let rank = L.ranks[0].name;
-    for (const r of L.ranks) if (G.score >= r.min) rank = r.name;
-    const idx = SG.LEVELS.indexOf(L);
+  // ---------- 结算页：账本 ----------
+  let nextAct = null;                        // 结算页上按空格 = 主按钮
+  const rankOf = L => { let n = L.ranks[0].name; for (const r of L.ranks) if (G.score >= r.min) n = r.name; return n; };
+
+  const CLOSE_TALK = {
+    retry: [
+      '账先放一边。今晚就当没开过门，灯重新点上，我们再来一次。',
+      '……还撑得住吗？我替你圆到这里了，这是最后一次，这回稳着点做。',
+    ],
+    gameover: '这间店，今晚是真的撑不住了。别难过，手艺和故事都还在，我们从头再来。',
+  };
+
+  function ledgerRows(r) {
+    const out = [];
+    const add = (label, val, cls = '', sub = false) => out.push({ label, val, cls, sub });
+    add('营业额', sgn(r.revenue), 'pos');
+    if (r.tips > 0) add('含打赏', sgn(r.tips), 'pos', true);
+    add('房租', sgn(-r.rent), 'neg');
+    add('水电', sgn(-r.util), 'neg');
+    add('食材', sgn(-r.food), 'neg');
+    if (r.foodWaste > 0) add('含倒掉、做坏', sgn(-r.foodWaste), 'neg', true);
+    return out;
+  }
+
+  function showLedger(isBest, r) {
+    const L = G.level, closed = r.kind !== 'ok';
+    const head = r.kind === 'retry' ? '今晚店撑不住了……' : r.kind === 'gameover' ? '歇业了……' : '打烊啦';
+    const stamp = r.kind === 'retry' ? ['闭店', 'bad'] : r.kind === 'gameover' ? ['歇业', 'bad'] : r.profit >= 0 ? ['盈', 'good'] : ['亏', 'bad'];
+    const rows = ledgerRows(r);
+    let k = 0;
+    const d = () => `style="--d:${(.25 + (k++) * .17).toFixed(2)}s"`;
+    const rowsHtml = rows.map(x => `<div class="rw${x.sub ? ' inc' : ''}" ${d()}><span>${x.label}</span><i></i><b class="${x.cls}">${x.val}</b></div>`).join('');
+    const profitHtml = `<div class="rule"></div>
+      <div class="rw total" ${d()}><span>今夜盈利</span><i></i><b class="${r.profit >= 0 ? 'pos' : 'neg'}">${sgn(r.profit)}</b><!--S--></div>`;
+    const balLabel = closed ? '资金将是' : '累计资金';
+    const balVal = closed ? r.after : r.after;
+    const balHtml = `<div class="rw bal" ${d()}><span>${balLabel}</span><i></i><b class="${balVal < 0 ? 'neg' : ''}">${fmt(balVal)}</b></div>`;
+    const lineHtml = (closed || r.tight) ? `<div class="rw inc" ${d()}><span>闭店线</span><i></i><b class="neg">${fmt(r.closeLine)}</b></div>` : '';
+    const tightHtml = r.tight ? `<div class="lg-tight" ${d()}>账本有点紧了……</div>` : '';
+    const stampHtml = `<div class="stamp ${stamp[1]}${stamp[0].length > 1 ? ' two' : ''}" style="--d:${(.25 + (k + 1) * .17 + .15).toFixed(2)}s">${stamp[0]}</div>`;
+
+    let foot;
+    if (r.kind === 'retry') {
+      const left = r.retriesLeft;
+      foot = `<div class="says">「${CLOSE_TALK.retry[Math.min(CFG.run.retryMax - left, CLOSE_TALK.retry.length) - 1]}」<br><span class="who">——澄姐</span></div>
+        <div class="lg-note">资金回到 ${fmt(r.restoredTo)}，重做第 ${r.night} 夜<br>${left > 0 ? `还能重做 ${left} 次` : '重做的机会用完了'}</div>`;
+    } else if (r.kind === 'gameover') {
+      foot = `<div class="says">「${CLOSE_TALK.gameover}」<br><span class="who">——澄姐</span></div>
+        <div class="lg-note">回到第一夜，资金归零<br>图鉴、剧情、升级、最高分都留着</div>`;
+    } else {
+      foot = `<div class="stats">上菜 ${G.served} 份 / 完美寿司 ${G.perfectSushi} 份 / 最高连击 ${G.maxCombo}</div>`;
+    }
+    const btn = r.kind === 'retry' ? `重做第 ${r.night} 夜` : r.kind === 'gameover' ? '重新开张'
+      : r.advanced ? `继续第 ${r.nextNight} 夜` : '再营业一夜';
+    nextAct = startCurrent;
+
+    panel.className = 'panel';
+    ov.classList.remove('hide', 'clear');
+    panel.innerHTML = `<div class="lg">
+      <div class="lg-head${closed ? ' bad' : ''}">${head}</div>
+      ${closed ? '' : `<div class="lg-score">★ ${G.score}　${rankOf(L)}${isBest && G.score > 0 ? '　新纪录！' : ''}</div>`}
+      <div class="paper${closed ? ' shut' : ''}">
+        <div class="paper-top"><span>第 ${r.night} 夜 · 账本</span><span>深夜寿司屋</span></div>
+        ${rowsHtml}${profitHtml.replace('<!--S-->', stampHtml)}${balHtml}${lineHtml}${tightHtml}
+      </div>
+      ${foot}
+      <div class="levels">
+        <button class="btn" data-act="start">${btn}</button>
+        <span class="link" data-act="back">回到首页</span>
+      </div>
+    </div>`;
+  }
+
+  // 练习夜（回头重玩已通关的夜）：沿用简单结算，不入账
+  function showPractice(isBest) {
+    const L = G.level, idx = SG.LEVELS.indexOf(L);
+    nextAct = () => SG.game.start(L);
     panel.className = 'panel';
     ov.classList.remove('hide', 'clear');
     panel.innerHTML = `<div class="title" style="font-size:calc(var(--s)*16px)">打烊啦</div>
       <div class="big" style="margin-top:calc(var(--s)*10px)">${G.score}</div>
-      <div class="rank">${isBest && G.score > 0 ? '新纪录！' : ''}称号：${rank}</div>
-      <div class="stats">上菜 ${G.served} 份 / 完美寿司 ${G.perfectSushi} 份<br>最高连击 ${G.maxCombo}</div>
+      <div class="rank">${isBest && G.score > 0 ? '新纪录！' : ''}称号：${rankOf(L)}</div>
+      <div class="stats">上菜 ${G.served} 份 / 完美寿司 ${G.perfectSushi} 份<br>最高连击 ${G.maxCombo}<br>练习营业，这一夜不入账</div>
       <div class="levels">
-        <button class="btn" data-act="play" data-level="${idx}">再开一次店</button>
+        <button class="btn" data-act="play" data-level="${idx}">再练一次</button>
         <button class="btn ghost" data-act="back">回到首页</button>
       </div>
       <div class="best">最高分 ${G.best}</div>`;
   }
 
+  function showOver(isBest, r) { r ? showLedger(isBest, r) : showPractice(isBest); }
+
   // 教学夜结算：不报分数，只有澄姐一句话
   function showTutorialOver() {
+    nextAct = startCurrent;
     panel.className = 'panel';
     ov.classList.remove('hide', 'clear');
     panel.innerHTML = `<div class="title" style="font-size:calc(var(--s)*16px)">打烊啦</div>
@@ -185,5 +263,5 @@
     if (G.muted) SG.pressSound.stop();
   });
 
-  SG.ui = { setHint, setTalk, setTask, updateHud, hideOverlay, showTitle, showOver, showTutorialOver, startCurrent };
+  SG.ui = { setHint, setTalk, setTask, updateHud, hideOverlay, showTitle, showOver, showTutorialOver, startCurrent, overDefault: () => nextAct && nextAct() };
 })(window.SG = window.SG || {});

@@ -17,7 +17,7 @@
     if (G.mode !== 'play') {
       if (e.code !== 'Space' && e.code !== 'Enter') return;
       if (G.mode === 'title' && G.screen === 'main') { e.preventDefault(); SG.ui.startCurrent(); }
-      else if (G.mode === 'over' && G.overT > .6) { e.preventDefault(); game.start(G.level); }
+      else if (G.mode === 'over' && G.overT > .6) { e.preventDefault(); SG.ui.overDefault(); }
       return;
     }
     if (e.code === 'Space') e.preventDefault();

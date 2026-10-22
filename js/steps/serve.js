@@ -19,6 +19,8 @@
     G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
     const gained = Math.round(base * c.api.comboMult());
     G.score += gained; G.served++;
+    const money = SG.econ.sale(sushi.type, isPerfect, G.combo);       // 记账：售价 + 打赏，扣这份的食材成本
+    if (money.tip) pop('打赏 +' + money.tip, s.x, 34, 'gold', 6);
     const made = SG.save.data.codex.made;
     made[sushi.type] = (made[sushi.type] || 0) + 1;      // 图鉴：累计做出的数量
     s.mood = 'happy'; s.state = 'leave'; s.leaveDelay = .7;
@@ -30,8 +32,9 @@
   }
 
   function discard(c) {
+    const lost = SG.econ.waste(G.sushi.type);                          // 倒掉也要付食材成本
     burst(160, 298, 8, ['#f7f2e6', '#d9cfb8'], 40);
-    pop('倒掉了', 150, 284, 'bad', 6); SG.noise(.08, .05); c.api.breakCombo();
+    pop(lost ? '倒掉了 −' + lost : '倒掉了', 150, 284, 'bad', 6); SG.noise(.08, .05); c.api.breakCombo();
     c.ev('discard');
     c.restart();
   }

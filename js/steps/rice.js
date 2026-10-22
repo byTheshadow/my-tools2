@@ -11,6 +11,7 @@
     pop(text, RICE.x, RICE.y - 26, 'bad', 8);
     sfx.fail(); SG.buzz(60); G.shake = 3; c.api.breakCombo();
     G.ringR = R0; G.riceP = 0; G.lockT = CFG.failLock;
+    SG.econ.riceFail();                       // 饭倒掉，记一笔小成本
     c.ev('fail');
   }
 

@@ -28,4 +28,4 @@
       ],
     },
   ];
-})(window.SG = window.SG || {});
+})(window.SG = window.SG || {})

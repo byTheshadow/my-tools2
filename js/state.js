@@ -17,6 +17,8 @@
     belt: [], beltOff: 0, dropSlice: null, sushi: null,
     // 客人
     seats: [],
+    // 本夜账目（economy.js 维护；on 为假表示这一夜不记账，如教学夜）
+    ledger: { on: false, real: false, sales: 0, tips: 0, foodServed: 0, foodWaste: 0 },
     // 特效
     particles: [], fallen: [], flying: [], shake: 0,
     muted: false,

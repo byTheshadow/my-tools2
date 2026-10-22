@@ -10,19 +10,20 @@
 index.html            页面骨架 + 脚本加载顺序
 css/style.css         界面样式（顶栏、飘字、开屏、选关、结算）
 js/
-  config.js           全局常量：布局坐标、判定容差、计分数值、整局流程（夜数/重做次数）
+  config.js           全局常量：布局坐标、判定容差、计分数值、经营数值（econ）、整局流程（夜数/重做次数）
   registry.js         注册表：剧情 / 互动 / 对话节点 / 步骤 / 做法 / 条件，以及条件语言
   data/               纯数据，加内容主要改这里
     ingredients.js      食材外观（颜色、花纹、是否带海苔）
     dishes.js           菜式 = 食材 + 做法 + 成本 + 售价 + 解锁来源
     methods.js          做法 = 步骤 id 的有序列表
-    levels.js           关卡（时长、解锁、难度曲线、称号）
+    levels.js           关卡（时长、房租水电、解锁、难度曲线、称号）
     customers.js        客人外观调色板
     lore.js             开屏背景文案
     howto.js            玩法说明卡的文字
     tutorial.js         教学夜脚本：澄姐说什么、每一步要做到什么
     stories/            剧情，每位特殊客人一个文件（步骤 4 起）
   save.js             统一存档（带版本号）
+  economy.js          经营结算：记账、打烊算账、闭店线、回档 / Game Over
   tutorial.js         教学夜引擎：按脚本一步步放开操作
   util.js             随机工具
   canvas.js           画布缩放、屏幕坐标转换
@@ -106,7 +107,13 @@ SG.registerStep('torch', {
 事件由玩法步骤用 `c.ev('名字')` 发出，现有 `rice` `fish` `serve` `discard` `fail`。新玩法想被教学夜认，在步骤里加一行 `c.ev(...)` 即可。
 
 **加一个关卡**
-在 `js/data/levels.js` 的数组末尾追加一个对象（复制第一关改数值即可）。选关页会自动出现，且需要通关上一夜才解锁。选关页一共 `CFG.run.totalNights` 格，没写的显示"敬请期待"。
+在 `js/data/levels.js` 的数组末尾追加一个对象（复制上一关改数值即可），记得写 `rent`（房租）。选关页会自动出现，打烊没闭店才解锁下一夜。选关页一共 `CFG.run.totalNights` 格，没写的显示"敬请期待"。
+
+**调经济**
+- 房租 / 水电：`data/levels.js` → `rent`、`utilityRate`（水电占房租的比例，想加难度调到 0.15–0.20）
+- 售价倍率、打赏、倒掉和做坏的成本、"账本紧"的提醒线：`config.js` → `econ`
+- 闭店线倍数、重做次数：`config.js` → `run`
+- 每道菜的成本和售价：`data/dishes.js`
 
 **加一条条件**
 `SG.registerCond('名字', (参数, env) => boolean)`，之后剧情的 `when` 里就能用。现有：`night` `money` `stat` `flag` `chapterDone` `dishCount`。
@@ -114,6 +121,7 @@ SG.registerStep('torch', {
 **调手感**
 - 圈缩得太快 / 金圈太窄：`data/levels.js` → `difficulty.pressDur` / `goldWidth`
 - 分数太高 / 太低：`config.js` → `score`
+- 赚得太多 / 太少：先看上面"调经济"，不要动 `score`（那是计分，不是钱）
 - 鱼片对位太严 / 太松：`config.js` → `drop`
 
 **改外观**
@@ -129,6 +137,7 @@ SG.G                      // 当前所有状态
 SG.save.data              // 当前存档
 SG.G.combo = 15           // 直接改连击，测高连击手感
 SG.G.timeLeft = 5         // 快进到结算
+SG.save.data.money = -900; SG.save.write()   // 直接改资金，测闭店线（刷新后生效）
 SG.game.start(SG.LEVELS[0])
 localStorage.removeItem('deepNightSushi:save')   // 清档重来（刷新后生效）
 ```

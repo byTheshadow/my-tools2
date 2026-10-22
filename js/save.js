@@ -10,6 +10,7 @@
     seenTutorial: false,      // 教学夜是否走过一遍
     money: 0,                 // 累计资金（可为负）
     night: 1,                 // 当前进行到第几夜
+    nightStartMoney: 0,       // 本夜开始前的资金（闭店回档时退回这里）
     retries: 0,               // 本轮已用掉几次"回到上一夜重做"
     upgrades: [],             // 已购买的店铺升级（id 可重复表示多档）
     dishes: [],               // 剧情解锁的菜式
@@ -21,7 +22,7 @@
 
   // key = 旧版本号；函数把存档升到下一个版本
   const migrations = {
-    // 1: d => { d.newField = 0; d.version = 2; return d; },
+    1: d => { d.nightStartMoney = d.money || 0; d.version = 2; return d; },   // 步骤 3：经营结算
   };
 
   function migrate(d) {
@@ -69,7 +70,7 @@
     best: id => data.bestByNight[id] || 0,
     setBest(id, v) { data.bestByNight[id] = v; write(); },
     // Game Over 后"回到最初的第一夜"：只清资金、夜数、重做次数；升级、图鉴、剧情进度、最高分都保留
-    restartRun() { data.money = 0; data.night = 1; data.retries = 0; write(); },
+    restartRun() { data.money = 0; data.nightStartMoney = 0; data.night = 1; data.retries = 0; write(); },
   };
   write();
 })(window.SG = window.SG || {});
