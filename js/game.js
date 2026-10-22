@@ -36,6 +36,15 @@
     if (type) s.type = type;
   }
 
+    // 教学用：把离中线最近的一片鱼片挪到正中线上
+  function alignBelt() {
+    if (!G.belt.length) return;
+    let near = G.belt[0];
+    for (const b of G.belt) if (Math.abs(b.x - CFG.rice.x) < Math.abs(near.x - CFG.rice.x)) near = b;
+    const dx = CFG.rice.x - near.x;
+    for (const b of G.belt) b.x += dx;
+  }
+
   // ---------- 传送带 ----------
   // 有一定概率放出客人正在点的鱼片，避免长时间等不到
   function pickBeltType() {
@@ -213,5 +222,5 @@
     SG.updateFx(dt);
   }
 
-  SG.game = { init, start, end, update, idle, down, up, key, step, ctx, spawnGuest, goldWidth, pressDuration, comboMult };
+   SG.game = { init, start, end, update, idle, down, up, key, step, ctx, spawnGuest, alignBelt, goldWidth, pressDuration, comboMult };
 })(window.SG = window.SG || {});
