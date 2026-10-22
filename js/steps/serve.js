@@ -10,6 +10,7 @@
       s.shakeT = .35; s.mood = 'angry';
       setTimeout(() => { if (s.state === 'wait') s.mood = 'idle'; }, 500);
       pop('不是这个！', s.x, 50, 'bad', 7); sfx.wrong(); SG.buzz(80); c.api.breakCombo();
+      c.ev('fail');
       return;
     }
     const isPerfect = sushi.riceQ === 'perfect' && sushi.fishQ === 'perfect';
@@ -24,12 +25,14 @@
     G.flying.push({ ...sushi, x0: RICE.x, y0: RICE.y, x1: s.x, y1: 98, t: 0 });
     pop('+' + gained, s.x, 46, 'gain', 8);
     sfx.coin(); SG.buzz(15);
+    c.ev('serve');
     c.restart();
   }
 
   function discard(c) {
     burst(160, 298, 8, ['#f7f2e6', '#d9cfb8'], 40);
     pop('倒掉了', 150, 284, 'bad', 6); SG.noise(.08, .05); c.api.breakCombo();
+    c.ev('discard');
     c.restart();
   }
 

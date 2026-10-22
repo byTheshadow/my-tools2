@@ -73,5 +73,6 @@
       R(0, 16, Math.round(W * r), 1, r > .2 ? '#f2b134' : ((t * 4 | 0) % 2 ? '#ff5a4a' : '#f2b134'));
     }
     ctx.restore();
+    SG.dialog.draw();                 // 澄姐的对话框画在最上层，不跟着抖动
   };
 })(window.SG = window.SG || {});

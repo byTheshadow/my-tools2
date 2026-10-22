@@ -5,16 +5,22 @@
   const $ = id => document.getElementById(id);
   const hud = { score: $('score'), combo: $('combo'), time: $('time') };
   const hintEl = $('hint'), ov = $('ov'), panel = $('panel'), muteBtn = $('mute');
+  const talkEl = $('talk'), taskEl = $('task');
   const sv = () => SG.save.data;
 
   function setHint() {
     const st = SG.game.step();
     hintEl.textContent = st && st.hint ? st.hint : '';
   }
+  // 澄姐的台词（对话框由 draw/dialog.js 画，文字用 DOM 才清楚）
+  function setTalk(text) { talkEl.textContent = text || ''; talkEl.classList.toggle('on', !!text); SG.wrap.dataset.talk = text ? 'on' : ''; }
+  // 左上角的小目标
+  function setTask(text) { taskEl.textContent = text || ''; taskEl.classList.toggle('on', !!text); }
+
   function updateHud() {
     hud.score.textContent = '★ ' + G.score;
     hud.combo.textContent = G.combo > 0 ? `连击 ${G.combo}  ×${SG.game.comboMult().toFixed(1)}` : '';
-    hud.time.textContent = '⏱ ' + Math.ceil(G.timeLeft);
+    hud.time.textContent = SG.tutorial.active() && !SG.tutorial.allow.timer ? '教学' : '⏱ ' + Math.ceil(G.timeLeft);
   }
   const hideOverlay = () => ov.classList.add('hide');
 
@@ -81,7 +87,9 @@
   }
 
   function renderLevels() {
-    const rows = [];
+    const T = SG.TUTORIAL_LEVEL;
+    const rows = [`<button class="night tut" data-act="tutorial"><b class="no">教</b><span class="nm">${T.name.replace(' · ', '·')}</span>
+      <span class="meta"><em>${sv().seenTutorial ? '可以重来一遍' : '建议先走一遍'}</em></span></button>`];
     for (let i = 0; i < CFG.run.totalNights; i++) {
       const L = SG.LEVELS[i];
       if (!L) {
@@ -112,7 +120,8 @@
   }
 
   function showTitle() { setScreen(sv().seenIntro ? 'main' : 'intro'); }
-  const startCurrent = () => SG.game.start(SG.LEVELS[currentIndex()]);
+  // 第一次开店先上教学夜
+  const startCurrent = () => sv().seenTutorial ? SG.game.start(SG.LEVELS[currentIndex()]) : SG.game.start(SG.TUTORIAL_LEVEL);
 
   // ---------- 结算页 ----------
   function showOver(isBest) {
@@ -133,6 +142,21 @@
       <div class="best">最高分 ${G.best}</div>`;
   }
 
+  // 教学夜结算：不报分数，只有澄姐一句话
+  function showTutorialOver() {
+    panel.className = 'panel';
+    ov.classList.remove('hide', 'clear');
+    panel.innerHTML = `<div class="title" style="font-size:calc(var(--s)*16px)">打烊啦</div>
+      <div class="rank" style="margin-top:calc(var(--s)*8px)">教学夜结束</div>
+      <div class="says">「${SG.tutorial.endLine()}」<br><span class="who">——澄姐</span></div>
+      <div class="stats">上菜 ${G.served} 份 / 完美寿司 ${G.perfectSushi} 份</div>
+      <div class="levels">
+        <button class="btn" data-act="start">开始第一夜</button>
+        <button class="btn ghost" data-act="tutorial">再练一遍</button>
+      </div>
+      <div class="best"><span data-act="back" class="link">回到首页</span></div>`;
+  }
+
   // ---------- 按钮：整个面板只绑一次事件（事件委托）----------
   const acts = {
     start: startCurrent,
@@ -140,6 +164,7 @@
     howto: () => { G.howPage = 0; setScreen('howto'); },
     levels: () => setScreen('levels'),
     back: () => setScreen('main'),
+    tutorial: () => SG.game.start(SG.TUTORIAL_LEVEL),
     lore: () => setScreen('intro'),
     introDone: () => { if (!sv().seenIntro) { sv().seenIntro = true; SG.save.write(); } setScreen('main'); },
     howPrev: () => { if (G.howPage > 0) { G.howPage--; setScreen('howto'); } else setScreen('main'); },
@@ -160,5 +185,5 @@
     if (G.muted) SG.pressSound.stop();
   });
 
-  SG.ui = { setHint, updateHud, hideOverlay, showTitle, showOver, startCurrent };
+  SG.ui = { setHint, setTalk, setTask, updateHud, hideOverlay, showTitle, showOver, showTutorialOver, startCurrent };
 })(window.SG = window.SG || {});

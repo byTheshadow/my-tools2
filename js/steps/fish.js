@@ -21,12 +21,14 @@
       G.fallen.push({ type: d.type, x: d.x, y: target, vx: Math.sign(d.dx) * 35, vy: 40, life: .7 });
       G.dropSlice = null; G.phase = 'fish';
       pop('没放上！', RICE.x, RICE.y - 30, 'bad', 8); SG.noise(.1, .06); c.api.breakCombo(); G.shake = 2;
+      c.ev('fail');
       return;
     }
     const q = ad <= D.perfectDist ? 'perfect' : ad <= D.goodDist ? 'good' : 'meh';
     const s = G.sushi;
     s.type = d.type; s.dx = q === 'perfect' ? 0 : Math.round(d.dx); s.fishQ = q; s.landT = 0;
     G.dropSlice = null;
+    c.ev('fish');
     c.next({ method: SG.dishOf(s.type).method });
     if (q === 'perfect' && s.riceQ === 'perfect') {
       pop('完美寿司！', RICE.x, RICE.y - 34, 'gold', 11); sfx.wow(); SG.buzz([20, 30, 20]);

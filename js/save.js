@@ -7,6 +7,7 @@
   const defaults = () => ({
     version: CFG.saveVersion,
     seenIntro: false,
+    seenTutorial: false,      // 教学夜是否走过一遍
     money: 0,                 // 累计资金（可为负）
     night: 1,                 // 当前进行到第几夜
     retries: 0,               // 本轮已用掉几次"回到上一夜重做"

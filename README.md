@@ -20,8 +20,10 @@ js/
     customers.js        客人外观调色板
     lore.js             开屏背景文案
     howto.js            玩法说明卡的文字
+    tutorial.js         教学夜脚本：澄姐说什么、每一步要做到什么
     stories/            剧情，每位特殊客人一个文件（步骤 4 起）
   save.js             统一存档（带版本号）
+  tutorial.js         教学夜引擎：按脚本一步步放开操作
   util.js             随机工具
   canvas.js           画布缩放、屏幕坐标转换
   state.js            所有可变状态（SG.G）+ 最高分存取
@@ -31,6 +33,7 @@ js/
     primitives.js       像素椭圆、圆环、矩形
     sprites.js          饭团、鱼片、寿司、客人、气泡、灯笼
     title.js            开屏夜景 + 玩法说明卡的小动画
+    dialog.js           澄姐的对话框与头像
     scene.js            营业画面的绘制顺序
   steps/              玩法步骤模块，一个文件一种操作
     rice.js             捏饭团
@@ -83,6 +86,24 @@ SG.registerStep('torch', {
 3. 菜式里写 `method: 'aburi'`
 4. `index.html` 加一行 `<script src="js/steps/torch.js">`
 5. 想让玩法说明里也有，在 `data/howto.js` 加一页，并用 `SG.registerHowtoArt` 画个小动画
+
+**改教学夜**
+台词、步数、每步的目标都在 `js/data/tutorial.js`。一步的写法：
+
+```js
+{
+  id: 'fish',
+  say: ['...', '...'],            // 进入时澄姐说的话，一句一屏
+  task: '把鱼片放上饭团　{n}',     // 左上角小目标，{n} 换成 "已完成 / 需要"
+  goal: { ev: 'fish', n: 1 },     // 要做到什么；没有 goal 就是说完自动过
+  allow: { belt: true },          // 这一步放开：belt / customers / patience / timer
+  spawn: 'match',                 // 立刻来一位客人，点的正好是砧板上这份
+  fail: '歪了也无妨。',            // 失败时的安慰，一步只说一次
+  after: ['就是这样。'],           // 完成后的回应
+}
+```
+
+事件由玩法步骤用 `c.ev('名字')` 发出，现有 `rice` `fish` `serve` `discard` `fail`。新玩法想被教学夜认，在步骤里加一行 `c.ev(...)` 即可。
 
 **加一个关卡**
 在 `js/data/levels.js` 的数组末尾追加一个对象（复制第一关改数值即可）。选关页会自动出现，且需要通关上一夜才解锁。选关页一共 `CFG.run.totalNights` 格，没写的显示"敬请期待"。

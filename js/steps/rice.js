@@ -11,6 +11,7 @@
     pop(text, RICE.x, RICE.y - 26, 'bad', 8);
     sfx.fail(); SG.buzz(60); G.shake = 3; c.api.breakCombo();
     G.ringR = R0; G.riceP = 0; G.lockT = CFG.failLock;
+    c.ev('fail');
   }
 
   function release(c) {
@@ -26,6 +27,7 @@
       pop('完美！', RICE.x, RICE.y - 28, 'gold', 9); sfx.perfect(); SG.buzz(20);
       burst(RICE.x, RICE.y - 4, 8, ['#f2b134', '#fff3c4'], 45);
     } else { pop('不错', RICE.x, RICE.y - 28, '', 8); sfx.good(); }
+    c.ev('rice');
     c.next();
   }
 

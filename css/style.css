@@ -24,6 +24,17 @@ canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
 #hint{position:absolute;left:calc(var(--s)*12px);top:calc(var(--s)*293px);width:calc(var(--s)*138px);
   font-size:calc(var(--s)*6px);line-height:1.35;color:#d9c9ae;pointer-events:none}
 #fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+/* 教学夜：左上角小目标 + 澄姐台词（位置对应 draw/dialog.js 的 BOX） */
+#task{position:absolute;left:50%;transform:translateX(-50%);top:calc(var(--s)*22px);display:none;white-space:nowrap;
+  font-size:calc(var(--s)*6px);line-height:1;color:var(--ink);background:var(--gold);
+  border:calc(var(--s)*1px) solid var(--ink);padding:calc(var(--s)*2px) calc(var(--s)*4px);pointer-events:none}
+#task.on{display:block}
+#talk{position:absolute;left:calc(var(--s)*46px);top:calc(var(--s)*240px);width:calc(var(--s)*124px);display:none;
+  font-size:calc(var(--s)*7px);line-height:1.7;color:var(--cream);pointer-events:none}
+#talk.on{display:block}
+#talk::before{content:"澄姐";display:block;font-size:calc(var(--s)*6px);color:var(--gold);margin-bottom:calc(var(--s)*2px)}
+#wrap[data-mode=title] #task,#wrap[data-mode=title] #talk{display:none}
+#wrap[data-talk=on] #hint{visibility:hidden}    /* 澄姐说话时，底部操作提示让位 */
 .pop{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;color:var(--cream);
   text-shadow:2px 0 var(--ink),-2px 0 var(--ink),0 2px var(--ink),0 -2px var(--ink),2px 2px var(--ink);
   animation:rise .9s steps(12) forwards}
@@ -60,6 +71,13 @@ canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges}
 .panel.full{position:absolute;inset:0;padding:0;font-size:calc(var(--s)*7px)}
 .scr{position:absolute;inset:0}
 .scr button{font-family:inherit}
+
+/* 教学夜结算里澄姐的话 */
+.says{margin:calc(var(--s)*6px) auto calc(var(--s)*10px);width:calc(var(--s)*126px);font-size:calc(var(--s)*7px);line-height:1.7;color:#eadfc8}
+.says .who{color:#a8977d;font-size:calc(var(--s)*6px)}
+.link{color:#a8977d;cursor:pointer;border-bottom:calc(var(--s)*1px) dotted #a8977d}
+.night.tut{border-left-color:#8be08b}
+.night.tut .no{background:#8be08b}
 
 /* 说明卡里的文字层（title.js 每帧刷新） */
 #lab{position:absolute;inset:0;pointer-events:none;overflow:hidden}

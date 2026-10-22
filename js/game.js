@@ -28,6 +28,14 @@
     s.skin = pick(L.skins); s.hair = pick(L.hairs); s.shirt = pick(L.shirts);
   }
 
+  // 教学用：让某个座位立刻来一位客人，并指定他点什么
+  function spawnGuest(i, type) {
+    const s = G.seats[i];
+    if (!s || s.state !== 'empty') return;
+    spawnCustomer(s);
+    if (type) s.type = type;
+  }
+
   // ---------- 传送带 ----------
   // 有一定概率放出客人正在点的鱼片，避免长时间等不到
   function pickBeltType() {
@@ -85,7 +93,11 @@
   }
 
   // 传给步骤模块的上下文
-  const ctx = { G, CFG, next, restart: beginFlow, api: { breakCombo, comboMult, pressDuration, goldWidth, beltSpeed } };
+  const ctx = {
+    G, CFG, next, restart: beginFlow,
+    ev: name => SG.tutorial.event(name),          // 通知教学夜：玩家完成了某个动作
+    api: { breakCombo, comboMult, pressDuration, goldWidth, beltSpeed },
+  };
 
   // ---------- 开局 / 结算 ----------
   function init() {   // 标题页的背景：传送带在转，没有客人
@@ -106,6 +118,7 @@
     G.particles = []; G.fallen = []; G.flying = []; G.dropSlice = null; G.lockT = 0;
     fillBelt();
     G.mode = 'play';
+    if (L.tutorial) SG.tutorial.start(); else SG.tutorial.stop();
     beginFlow();
     SG.ui.hideOverlay(); SG.fxEl.innerHTML = '';
     SG.ui.setHint();
@@ -113,6 +126,12 @@
 
   function end() {
     G.mode = 'over'; G.overT = 0; SG.pressSound.stop(); G.pressing = false;
+    SG.ui.setTalk(''); SG.ui.setTask('');
+    if (G.level.tutorial) {                  // 教学夜不记最高分、不计失败
+      SG.save.data.seenTutorial = true; SG.save.write();
+      SG.ui.showTutorialOver();
+      return;
+    }
     const isBest = G.score > G.best;
     if (isBest) { G.best = G.score; SG.saveBest(); }
     SG.save.write();                         // 图鉴等累计数据
@@ -123,6 +142,7 @@
   function down(lx, ly) {
     if (G.mode !== 'play') return;
     SG.audioInit();
+    if (SG.tutorial.down()) return;          // 澄姐在说话：这一下只用来翻页
     const st = step();
     if (st && st.down) st.down(ctx, lx, ly);
   }
@@ -135,8 +155,15 @@
 
   // ---------- 每帧更新 ----------
   function update(dt) {
-    G.elapsed += dt; G.timeLeft -= dt;
-    if (G.timeLeft <= 0) { G.timeLeft = 0; end(); return; }
+    const allow = SG.tutorial.allow, tut = SG.tutorial.active();
+    if (tut && SG.tutorial.speaking()) {     // 澄姐说话时，整个店先停一停
+      SG.updateFx(dt); SG.ui.updateHud();
+      return;
+    }
+    if (!tut || allow.timer) {
+      G.elapsed += dt; G.timeLeft -= dt;
+      if (G.timeLeft <= 0) { G.timeLeft = 0; end(); return; }
+    }
 
     for (const u of G.level.unlocks || []) {
       if (G.elapsed >= u.at && !G.unlocked.includes(u.id)) {
@@ -147,7 +174,7 @@
     }
 
     G.lockT -= dt;
-    updateBelt(dt, beltSpeed());
+    updateBelt(dt, tut && !allow.belt ? 0 : beltSpeed());
 
     const st = step();
     if (st && st.update) st.update(ctx, dt);
@@ -156,10 +183,10 @@
     const [rmin, rmax] = diff().seatRespawn;
     for (const s of G.seats) {
       s.shakeT = Math.max(0, s.shakeT - dt);
-      if (s.state === 'empty') { s.wait -= dt; if (s.wait <= 0) spawnCustomer(s); }
+      if (s.state === 'empty') { if (!tut || allow.customers) { s.wait -= dt; if (s.wait <= 0) spawnCustomer(s); } }
       else if (s.state === 'arrive') { s.anim += dt * 3; if (s.anim >= 1) { s.anim = 1; s.state = 'wait'; } }
       else if (s.state === 'wait') {
-        s.pat -= dt;
+        if (!tut || allow.patience) s.pat -= dt;
         if (s.pat <= 0) {
           s.state = 'leave'; s.mood = 'angry'; s.leaveDelay = .6;
           pop('不等了', s.x, 50, 'bad', 7); sfx.wrong(); breakCombo();
@@ -184,5 +211,5 @@
     SG.updateFx(dt);
   }
 
-  SG.game = { init, start, end, update, idle, down, up, key, step, ctx, goldWidth, pressDuration, comboMult };
+  SG.game = { init, start, end, update, idle, down, up, key, step, ctx, spawnGuest, goldWidth, pressDuration, comboMult };
 })(window.SG = window.SG || {});
