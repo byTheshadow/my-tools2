@@ -6,11 +6,11 @@
   const RICE = CFG.rice;
   const EXTRA_SCORE = { perfect: 30, good: 15, meh: 5 };    // 炙烧的得分，和放鱼片的档位一致
 
-  // 横坐标最近的座位下标。优先在"等上菜"的客人里找；一个都没有就返回 -1
+  // 横坐标最近的座位下标。只看座位位置，不看客人状态：
+  // 点哪个座位就是哪个座位，那位客人没在等菜就什么都不发生，不会"溜"给隔壁。
   function nearestSeat(x) {
     let best = -1, bd = 1e9;
     G.seats.forEach((s, i) => {
-      if (s.state !== 'wait') return;
       const d = Math.abs(s.x - x);
       if (d < bd) { bd = d; best = i; }
     });
