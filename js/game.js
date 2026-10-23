@@ -1,16 +1,20 @@
 // 游戏流程：开局/结算、客人、传送带、难度曲线，以及"按做法的步骤表往下走"的流程跑道。
 // 具体玩法（捏饭团/放鱼片/炙烧/上菜…）在 steps/*.js，剧情在 story.js，数值见 config.js 与 data/levels.js，规则见 docs/RULES.md。
+// 店铺升级（magic：金圈、传送带、耐心、座位数）通过 SG.shop.fx 叠加在难度曲线之上，见 js/shop.js。
 (function (SG) {
   const { CFG, G, rnd, pick, pop, sfx } = SG;
   const BELT_Y = CFG.belt.y, SP = CFG.belt.gap;
   const diff = () => G.level.difficulty;
 
-  // ---------- 难度曲线（随时间 / 连击变化）----------
+  // ---------- 难度曲线（随时间 / 连击变化，再叠加店铺升级）----------
   const pressDuration = () => { const d = diff().pressDur;  return Math.max(d.min, d.start - G.combo * d.perCombo - G.elapsed * d.perSec); };
-  const goldWidth     = () => { const d = diff().goldWidth; return Math.max(d.min, d.start - G.combo * d.perCombo); };
-  const beltSpeed     = () => { const d = diff().belt;      return Math.min(d.max, d.start + G.elapsed * d.perSec + G.combo * d.perCombo); };
-  const patienceMax   = () => { const d = diff().patience;  return Math.max(d.min, d.start - G.elapsed * d.perSec); };
+  const goldWidth     = () => { const d = diff().goldWidth; return Math.max(d.min, d.start - G.combo * d.perCombo) + SG.shop.fx('goldBonus'); };
+  const beltSpeed     = () => { const d = diff().belt;      return Math.min(Math.max(12, d.max - SG.shop.fx('beltMaxCut')), d.start + G.elapsed * d.perSec + G.combo * d.perCombo); };
+  const patienceMax   = () => { const d = diff().patience;  return Math.max(d.min, d.start - G.elapsed * d.perSec) + SG.shop.fx('patienceBonus'); };
   const comboMult     = () => 1 + Math.min(G.combo, CFG.score.comboCap) * CFG.score.comboStep;
+
+  // 这一夜有几个座位：教学夜固定 3 个，正式夜看扩建升级
+  const seatXsFor = L => SG.shop.seatXs(L && L.tutorial ? 3 : SG.shop.seatCount());
 
   function breakCombo() {
     if (G.combo >= 3) pop('连击中断', 90, 30, 'bad', 6);
@@ -19,8 +23,12 @@
 
   // ---------- 客人 ----------
   // 座位状态：empty 空 | arrive 走进来 | wait 等上菜 | guest 特殊客人头顶 ✦ 等你点 | talk 正在对话 | leave 离开
-  function newSeat(i, wait) {
-    return { i, x: CFG.seats[i], state: 'empty', wait, anim: 0, pat: 0, maxP: 1, type: null, mood: 'idle', shakeT: 0, leaveDelay: 0, npc: null, acc: null, stayT: 0 };
+  function newSeat(i, x, wait) {
+    return { i, x, state: 'empty', wait, anim: 0, pat: 0, maxP: 1, type: null, mood: 'idle', shakeT: 0, leaveDelay: 0, npc: null, acc: null, stayT: 0 };
+  }
+  function makeSeats(L) {
+    const xs = seatXsFor(L), ds = (L && L.difficulty && L.difficulty.firstSeatDelays) || [];
+    return xs.map((x, i) => newSeat(i, x, ds[i] != null ? ds[i] : 1 + i * 1.15));
   }
   function spawnCustomer(s) {
     const L = SG.LOOKS;
@@ -112,7 +120,7 @@
   // ---------- 开局 / 结算 ----------
   function init() {   // 标题页的背景：传送带在转，没有客人
     G.unlocked = Object.keys(SG.INGREDIENTS).filter(id => !(SG.DISHES[id] && SG.DISHES[id].from && SG.DISHES[id].from.story));
-    G.seats = CFG.seats.map((_, i) => newSeat(i, 99));
+    G.seats = makeSeats(null).map(s => (s.wait = 99, s));
     fillBelt();
   }
 
@@ -125,7 +133,7 @@
     G.score = 0; G.combo = 0; G.maxCombo = 0; G.served = 0; G.perfectSushi = 0;
     G.unlocked = L.startIngredients.slice();
     if (!L.tutorial) for (const id of SG.save.data.dishes) if (SG.DISHES[id] && !G.unlocked.includes(id)) G.unlocked.push(id);   // 剧情解锁过的菜
-    G.seats = CFG.seats.map((_, i) => newSeat(i, L.difficulty.firstSeatDelays[i] ?? 1));
+    G.seats = makeSeats(L);
     G.particles = []; G.fallen = []; G.flying = []; G.dropSlice = null; G.lockT = 0; G.torch = null;
     SG.econ.begin(L);                        // 清空账本；只有"当前这一夜"才真正记账
     SG.story.begin(L);                       // 特殊客人：只在真记账的当前夜、且关卡 npcs 允许时才会来

@@ -1,4 +1,4 @@
-// 整个画面的绘制顺序：墙 → 客人 → 柜台 → 传送带 → 砧板 → 寿司 → 特效 → 顶栏 → 互动画面 → 对话框。
+// 整个画面的绘制顺序：墙 → 装饰(墙) → 客人 → 柜台 → 传送带 → 砧板 → 装饰(地面) → 寿司 → 特效 → 顶栏 → 互动画面 → 对话框。
 (function (SG) {
   const ctx = SG.ctx, G = SG.G, CFG = SG.CFG, { W, H } = CFG, RICE = CFG.rice;
   const { R } = SG.px;
@@ -16,6 +16,7 @@
     for (let x = 6; x < W; x += 12) R(x, 18, 1, 90, '#33263a');
     R(0, 102, W, 6, '#2d2231');
     SP.lantern(5, 26); SP.lantern(167, 26);
+    SG.deco.draw('wall');                                          // 墙上的装饰（风铃等）
 
     // 客人 + 气泡 + 特殊客人的 ✦
     for (const s of G.seats) if (s.state !== 'empty') SP.customer(s);
@@ -37,6 +38,9 @@
     R(12, 158, 156, 130, '#3b2620'); R(13, 159, 154, 128, '#e5bf88');
     for (const gy of [172, 191, 215, 262, 276]) R(15, gy, 150, 1, '#d6ad74');
     R(13, 283, 154, 4, '#c6955a');
+
+    // 砧板两侧的装饰（盆栽、鱼篓、猫窝）
+    SG.deco.draw('floor');
 
     // 当前步骤画在桶之前的东西（如放鱼片的中线提示）
     if (st && st.drawUnder) st.drawUnder(SG.game.ctx);

@@ -1,0 +1,27 @@
+/* 小店（店铺升级商店）。沿用选关页的 lv-title / lv-sub / lv-back。 */
+.ups{position:absolute;left:calc(var(--s)*8px);right:calc(var(--s)*8px);top:calc(var(--s)*48px);bottom:calc(var(--s)*44px);
+  overflow-y:auto;touch-action:pan-y;scrollbar-width:none;text-align:left}
+.ups::-webkit-scrollbar{display:none}
+.up-cat{margin:calc(var(--s)*4px) 0 calc(var(--s)*2px);font-size:calc(var(--s)*5.5px);letter-spacing:calc(var(--s)*1px);color:var(--gold)}
+.up-cat:first-child{margin-top:0}
+.up{display:grid;grid-template-columns:1fr auto;gap:0 calc(var(--s)*4px);align-items:baseline;
+  margin-bottom:calc(var(--s)*3px);padding:calc(var(--s)*3px) calc(var(--s)*5px);cursor:pointer;
+  background:rgba(29,22,32,.88);border:calc(var(--s)*1px) solid #5a4a4a;border-left:calc(var(--s)*3px) solid var(--gold)}
+.up:active{background:rgba(60,44,60,.95);transform:translateY(calc(var(--s)*1px))}
+.up .nm{font-size:calc(var(--s)*7.5px);color:var(--cream)}
+.up .pips{font-style:normal;margin-left:calc(var(--s)*3px);font-size:calc(var(--s)*5px);color:var(--gold);letter-spacing:calc(var(--s)*.5px)}
+.up .pr{font-size:calc(var(--s)*7px);color:var(--gold);font-variant-numeric:tabular-nums;white-space:nowrap}
+.up .ds{grid-column:1 / -1;margin-top:calc(var(--s)*1px);font-size:calc(var(--s)*5.5px);line-height:1.45;color:#a8977d}
+.up.poor{cursor:default;border-left-color:#5a4a5a}
+.up.poor .pr{color:var(--red)}
+.up.poor .nm{color:#b8aa9c}
+.up.own{cursor:default;border-left-color:#8be08b}
+.up.own .pr{color:#8be08b}
+.up.lock{cursor:default;border-left-color:#4a4050;background:rgba(29,22,32,.8)}
+.up.lock .nm{color:#7a6e80}
+.up.lock .pr{color:#7a6e80;font-size:calc(var(--s)*5.5px)}
+.up-tip{position:absolute;left:0;right:0;bottom:calc(var(--s)*26px);text-align:center;
+  font-size:calc(var(--s)*5px);color:#7a6e80}
+/* 首页一行放三个按钮，收一点内边距 */
+.menu .row .btn.small{padding:calc(var(--s)*2px) calc(var(--s)*7px)}
+.lg-links{font-size:calc(var(--s)*6px)}

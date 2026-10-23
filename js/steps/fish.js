@@ -1,9 +1,16 @@
 // 步骤：放鱼片。点一下，离中线最近的鱼片落下；落点偏差决定判定。
 // 落上饭团后根据鱼片所属菜式的 method 决定后面走哪条做法，然后 c.next({ method })。
+// 磨刀石升级（SG.shop.fx('dropEase')）会把三档判定一起放宽。
 (function (SG) {
   const { CFG, G, pop, burst, sfx } = SG;
   const { R } = SG.px;
   const RICE = CFG.rice, BELT_Y = CFG.belt.y;
+
+  // 当前的落点判定（基础值 + 磨刀石）
+  function dropSpec() {
+    const e = SG.shop.fx('dropEase'), D = CFG.drop;
+    return { perfectDist: D.perfectDist + e, goodDist: D.goodDist + e, missDist: D.missDist + e };
+  }
 
   function dropFish() {
     if (!G.belt.length) return;
@@ -15,7 +22,7 @@
   }
 
   function land(c, target) {
-    const d = G.dropSlice, ad = Math.abs(d.dx), D = CFG.drop;
+    const d = G.dropSlice, ad = Math.abs(d.dx), D = dropSpec();
     sfx.drop();
     if (ad > D.missDist) {
       G.fallen.push({ type: d.type, x: d.x, y: target, vx: Math.sign(d.dx) * 35, vy: 40, life: .7 });

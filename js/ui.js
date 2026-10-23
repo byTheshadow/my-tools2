@@ -1,5 +1,6 @@
 // DOM 界面：顶栏数值、操作提示、开屏（序章 / 首页 / 玩法说明 / 选关）、结算页、静音按钮。
 // 开屏的背景是 draw/title.js 画的夜景；这里只负责叠在上面的文字和按钮。
+// 新页面不要往这里塞：用 SG.ui.addScreen(名字, 渲染函数) + SG.ui.addAct(名字, 处理函数) 另开文件（例：js/ui-shop.js）。
 (function (SG) {
   const G = SG.G, CFG = SG.CFG;
   const $ = id => document.getElementById(id);
@@ -32,7 +33,6 @@
   const currentIndex = () => Math.min(Math.max(sv().night, 1), SG.LEVELS.length) - 1;
   const fmt = n => (n < 0 ? '−' : '') + '¥' + Math.abs(Math.round(n)).toLocaleString('en-US');
   const sgn = n => (n < 0 ? '−' : '+') + Math.abs(Math.round(n)).toLocaleString('en-US');
-  const absn = n => Math.abs(Math.round(n)).toLocaleString('en-US');
   function starsOf(L, score) {
     if (!score) return 0;
     let idx = 0; L.ranks.forEach((r, i) => { if (score >= r.min) idx = i; });
@@ -62,8 +62,9 @@
       <div class="menu">
         <button class="btn big pulse" data-act="start">开始营业</button>
         <div class="row">
-          <button class="btn small ghost" data-act="howto">玩法说明</button>
+          <button class="btn small ghost" data-act="howto">玩　法</button>
           <button class="btn small ghost" data-act="levels">关　卡</button>
+          <button class="btn small ghost" data-act="shop">小　店</button>
         </div>
         <div class="foot">第 ${i + 1} 夜　资金 <span class="${sv().money < 0 ? 'neg' : ''}">${fmt(sv().money)}</span></div>
       </div>
@@ -139,13 +140,14 @@
     gameover: '这间店，今晚是真的撑不住了。别难过，手艺和故事都还在，我们从头再来。',
   };
 
-   function ledgerRows(r) {
+  function ledgerRows(r) {
     const out = [];
     const add = (label, val, cls = '', sub = false) => out.push({ label, val, cls, sub });
     add('营业额', sgn(r.revenue), 'pos');
     if (r.tips > 0) add('含打赏', sgn(r.tips), 'pos', true);
     if (r.extra > 0) add('剧情奖励', sgn(r.extra), 'pos');
     add('房租', sgn(-r.rent), 'neg');
+    if (r.rentCut > 0) add('议价已减', sgn(r.rentCut), 'pos', true);
     add('水电', sgn(-r.util), 'neg');
     add('食材', sgn(-r.food), 'neg');
     if (r.foodWaste > 0) add('含倒掉、做坏', sgn(-r.foodWaste), 'neg', true);
@@ -163,7 +165,7 @@
     const profitHtml = `<div class="rule"></div>
       <div class="rw total" ${d()}><span>今夜盈利</span><i></i><b class="${r.profit >= 0 ? 'pos' : 'neg'}">${sgn(r.profit)}</b><!--S--></div>`;
     const balLabel = closed ? '资金将是' : '累计资金';
-    const balVal = closed ? r.after : r.after;
+    const balVal = r.after;
     const balHtml = `<div class="rw bal" ${d()}><span>${balLabel}</span><i></i><b class="${balVal < 0 ? 'neg' : ''}">${fmt(balVal)}</b></div>`;
     const lineHtml = (closed || r.tight) ? `<div class="rw inc" ${d()}><span>闭店线</span><i></i><b class="neg">${fmt(r.closeLine)}</b></div>` : '';
     const tightHtml = r.tight ? `<div class="lg-tight" ${d()}>账本有点紧了……</div>` : '';
@@ -196,7 +198,7 @@
       ${foot}
       <div class="levels">
         <button class="btn" data-act="start">${btn}</button>
-        <span class="link" data-act="back">回到首页</span>
+        <div class="lg-links"><span class="link" data-act="shop">去小店</span>　<span class="link" data-act="back">回到首页</span></div>
       </div>
     </div>`;
   }
@@ -264,5 +266,12 @@
     if (G.muted) SG.pressSound.stop();
   });
 
-  SG.ui = { setHint, setTalk, setTask, updateHud, hideOverlay, showTitle, showOver, showTutorialOver, startCurrent, overDefault: () => nextAct && nextAct() };
+  SG.ui = {
+    setHint, setTalk, setTask, updateHud, hideOverlay, showTitle, showOver, showTutorialOver, startCurrent,
+    overDefault: () => nextAct && nextAct(),
+    // 给别的界面文件用（例：js/ui-shop.js）
+    setScreen, fmt, sgn,
+    addScreen: (name, fn) => { screens[name] = fn; },
+    addAct: (name, fn) => { acts[name] = fn; },
+  };
 })(window.SG = window.SG || {});
