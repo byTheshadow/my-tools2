@@ -27,8 +27,8 @@
 
   // ---------- 进度 ----------
   const bestOf = L => sv().bestByNight[L.id] || 0;
-  // 夜数以存档里的 night 为准（打烊没闭店才会往前走）；闭店回档不会让夜数前进
-  const clearedCount = () => Math.max(0, sv().night - 1);
+  // 夜数以存档里的 night 为准（打烊没闭店才会往前走）；闭店回档不会让夜数前进。
+  // 游戏没有终点：night 走到最后一个关卡就停在那里，继续营业；以后追加关卡会自然接着往下。
   const isOpen = i => i < sv().night;
   const currentIndex = () => Math.min(Math.max(sv().night, 1), SG.LEVELS.length) - 1;
   const fmt = n => (n < 0 ? '−' : '') + '¥' + Math.abs(Math.round(n)).toLocaleString('en-US');
@@ -86,19 +86,18 @@
         <button class="btn small ghost" data-act="howPrev">${G.howPage ? '上一页' : '返回'}</button>
         <button class="btn small" data-act="howNext">${last ? '明白了' : '下一页'}</button>
       </div>
-      <div class="keys how-keys">电脑：空格 捏/放 · 1 2 3 上菜 · X 倒掉</div>
+      <div class="keys how-keys">电脑：空格 捏/放 · 1–5 给对应座位上菜 · X 倒掉</div>
     </div>`;
   }
 
+  // 选关页：格子数跟着 SG.LEVELS 走，末尾固定留一格"敬请期待"。以后加关卡不用改这里。
   function renderLevels() {
-    const T = SG.TUTORIAL_LEVEL;
+    const T = SG.TUTORIAL_LEVEL, n = SG.LEVELS.length;
     const rows = [`<button class="night tut" data-act="tutorial"><b class="no">教</b><span class="nm">${T.name.replace(' · ', '·')}</span>
       <span class="meta"><em>${sv().seenTutorial ? '可以重来一遍' : '建议先走一遍'}</em></span></button>`];
-    for (let i = 0; i < CFG.run.totalNights; i++) {
+    for (let i = 0; i < n; i++) {
       const L = SG.LEVELS[i];
-      if (!L) {
-        rows.push(`<div class="night locked"><b class="no">${i + 1}</b><span class="nm">？？？</span><span class="meta"><em>敬请期待</em></span></div>`);
-      } else if (!isOpen(i)) {
+      if (!isOpen(i)) {
         rows.push(`<div class="night locked"><b class="no">${i + 1}</b><span class="nm">${nightName(L)}</span><span class="meta"><em>通关上一夜解锁</em></span></div>`);
       } else {
         const best = bestOf(L), cur = i === currentIndex();
@@ -107,9 +106,10 @@
           <span class="meta"><span class="stars">${starStr(starsOf(L, best))}</span><em>${em}</em></span></button>`);
       }
     }
+    rows.push(`<div class="night locked"><b class="no">${n + 1}</b><span class="nm">？？？</span><span class="meta"><em>敬请期待</em></span></div>`);
     panel.innerHTML = `<div class="scr levels">
       <div class="lv-title">关　卡</div>
-      <div class="lv-sub">已营业 ${clearedCount()} / ${CFG.run.totalNights} 夜　资金 ${fmt(sv().money)}　重做 ${Math.max(0, CFG.run.retryMax - sv().retries)} 次</div>
+      <div class="lv-sub">当前第 ${currentIndex() + 1} 夜　资金 ${fmt(sv().money)}　重做 ${Math.max(0, CFG.run.retryMax - sv().retries)} 次</div>
       <div class="nights">${rows.join('')}</div>
       <button class="btn small ghost lv-back" data-act="back">返回</button>
     </div>`;
@@ -135,7 +135,7 @@
   const CLOSE_TALK = {
     retry: [
       '账先放一边。今晚就当没开过门，灯重新点上，我们再来一次。',
-      '……还撑得住吗？我替你圆到这里了，这是最后一次，这回稳着点做。',
+      '……还撑得住吗？我替你圆到这里了，这回稳着点做。',
     ],
     gameover: '这间店，今晚是真的撑不住了。别难过，手艺和故事都还在，我们从头再来。',
   };
@@ -175,7 +175,7 @@
     if (r.kind === 'retry') {
       const left = r.retriesLeft;
       foot = `<div class="says">「${CLOSE_TALK.retry[Math.min(CFG.run.retryMax - left, CLOSE_TALK.retry.length) - 1]}」<br><span class="who">——澄姐</span></div>
-        <div class="lg-note">资金回到 ${fmt(r.restoredTo)}，重做第 ${r.night} 夜<br>${left > 0 ? `还能重做 ${left} 次` : '重做的机会用完了'}</div>`;
+        <div class="lg-note">资金回到 ${fmt(r.restoredTo)}，重做第 ${r.night} 夜<br>${left > 0 ? `还能重做 ${left} 次` : '重做的机会用完了，平安过一夜能续回一次'}</div>`;
     } else if (r.kind === 'gameover') {
       foot = `<div class="says">「${CLOSE_TALK.gameover}」<br><span class="who">——澄姐</span></div>
         <div class="lg-note">回到第一夜，资金归零<br>图鉴、剧情、升级、最高分都留着</div>`;

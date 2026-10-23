@@ -2,6 +2,7 @@
 // 数值在 config.js 的 econ 与 run，每夜的房租水电在 data/levels.js。教学夜整个不记账。
 // 店铺升级：招财猫加打赏（tipRateAdd / tipChance）、议价减房租（rentCut），见 js/shop.js。
 // 进货价：关卡可写 costMult（不写 = 1.0），所有食材成本按它乘一遍——上菜的、倒掉的、做坏的都算。
+// 游戏没有终点：打完最后一个关卡，night 停在最后一夜，继续按那一夜的数值真记账；以后追加关卡，玩家自然接着往下走。
 //   SG.econ.begin(level)               开店时调用：清空账本，记下夜初资金
 //   SG.econ.sale / waste / riceFail / fishMiss   玩法步骤调用，返回这次的金额
 //   SG.econ.extra(n)                   剧情奖励：记进当夜账本，打烊时入账（闭店回档时一起退回）
@@ -43,7 +44,7 @@
     led().sales += price; led().tips += tip; led().foodServed += costOf(type);
     return { price, tip };
   }
-  // 倒掉一份做好的寿司（或炙烧烧焦）：付整份成本
+  // 倒掉一份做好的寿司（或炙烧烧焦、海苔撕破）：付整份成本
   function waste(type) {
     if (!on()) return 0;
     const c = costOf(type); led().foodWaste += c; return c;
@@ -77,7 +78,8 @@
     const food = l.foodServed + l.foodWaste, revenue = l.sales + l.tips, bonus = l.extra || 0;
     const profit = revenue + bonus - rent - util - food;
     const before = d.money, after = before + profit;
-    const closeLine = -Math.round(rent * CFG.run.closeLineRentMult);
+    // 闭店线按"原房租"算：议价只省账上的钱，不该让安全线变近
+    const closeLine = -Math.round(rentFull * CFG.run.closeLineRentMult);
     const closed = after < closeLine;
     const r = {
       night: idx + 1, rent, rentFull, rentCut, util, sales: l.sales, tips: l.tips, revenue, extra: bonus,
@@ -90,12 +92,14 @@
       r.kind = 'retry';
       d.retries++; d.money = d.nightStartMoney;
       r.retriesLeft = CFG.run.retryMax - d.retries; r.restoredTo = d.money;
-    } else if (closed) {                                    // 第三次：Game Over，回到第一夜
+    } else if (closed) {                                    // 重做次数用完又闭店：Game Over，回到第一夜
       r.kind = 'gameover';
       SG.save.restartRun();
-    } else {                                                // 正常入账，往下一夜走
+    } else {                                                // 正常入账
       d.money = after;
-      const next = Math.min(idx + 2, SG.LEVELS.length);
+      if (d.retries > 0) d.retries--;                       // 平安过一夜，澄姐帮你"续"回一次重做的机会
+      r.retriesLeft = CFG.run.retryMax - d.retries;
+      const next = Math.min(idx + 2, SG.LEVELS.length);     // 最后一夜之后 night 不再前进，继续按最后一夜营业
       r.advanced = next > d.night; d.night = Math.max(d.night, next);
       d.nightStartMoney = d.money;
     }
