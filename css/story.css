@@ -1,0 +1,9 @@
+/* 剧情：对话框上的名字改成由数据驱动（story.js 设置 #talk 的 data-who），再加上选项按钮。位置对应 draw/dialog.js 的 BOX。 */
+#talk::before{content:attr(data-who)}
+#choices{position:absolute;left:calc(var(--s)*46px);top:calc(var(--s)*238px);width:calc(var(--s)*124px);display:none;flex-direction:column;gap:calc(var(--s)*3px)}
+#choices.on{display:flex}
+#choices button{font:inherit;font-size:calc(var(--s)*6.5px);line-height:1.35;text-align:left;color:var(--cream);cursor:pointer;
+  background:#2d2236;border:calc(var(--s)*1px) solid #6a5a4a;border-left:calc(var(--s)*3px) solid var(--gold);padding:calc(var(--s)*2.5px) calc(var(--s)*4px)}
+#choices button:active{background:#463a52}
+#choices button:focus-visible{outline:calc(var(--s)*1px) dashed var(--cream);outline-offset:calc(var(--s)*1px)}
+#wrap[data-mode=title] #choices{display:none}

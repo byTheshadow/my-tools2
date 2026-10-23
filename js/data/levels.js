@@ -7,6 +7,7 @@
 //   unlocks            [{at: 秒, id}] 到时间解锁新食材
 //   difficulty         难度曲线，公式见 docs/RULES.md 第 7 节
 //   ranks              结算称号，按 min 分数从小到大
+//   npcs               这一夜允许登场的特殊客人（剧情 id，见 data/stories/）；没写 = 不会有特殊客人
 //   tutorial           true = 教学夜（不记账、不记最高分、由 tutorial.js 引导）
 // 第 2、3 夜是占位数值（草案夜 1 与夜 3 之间插值），步骤 8 再正式调。
 (function (SG) {
@@ -61,6 +62,7 @@
       name: '第 2 夜 · 雨后的客人',
       duration: 90,
       rent: 350,
+      npcs: ['songshu'],
       startIngredients: BASE,
       unlocks: [{ at: 20, id: 'shrimp' }],
       difficulty: {
@@ -78,6 +80,7 @@
       name: '第 3 夜 · 夜归人',
       duration: 90,
       rent: 550,
+      npcs: ['songshu'],
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: {

@@ -1,15 +1,14 @@
-// 澄姐的对话框：画布负责框、头像和翻页箭头，文字由 ui.js 用 DOM 画（更清楚）。
-// 位置写在 BOX 里，css/style.css 的 #talk 要跟着对齐。
+// 对话框：澄姐的教学对话、特殊客人的剧情对话共用。画布负责框、头像和翻页箭头，文字由 ui.js / story.js 用 DOM 画（更清楚）。
+// 位置写在 BOX 里，css/style.css 的 #talk 与 css/story.css 的 #choices 要跟着对齐。
+// 头像：SG.registerPortrait(id, fn(x, y))，画在 (x, y) 为左上角的 34×38 区域里（底色已画好）。澄姐的 id 是 'chef'。
 (function (SG) {
   const ctx = SG.ctx, G = SG.G;
   const { R, ellipse } = SG.px;
   const BOX = { x: 4, y: 232, w: 172, h: 80 };
 
-  // 澄姐：挽发、作务衣、眼神温和。画在 (x, y) 为左上角的 34×38 区域里
+  // 澄姐：挽发、作务衣、眼神温和
   function chef(x, y) {
     const O = '#2a1e18', skin = '#f3cfae', hair = '#241a24', cloth = '#2f4664';
-    R(x, y, 34, 38, '#1d1620'); R(x + 1, y + 1, 32, 36, '#4a3a52');
-    R(x + 1, y + 1, 32, 18, '#5a4760');
     const bob = Math.sin(G.t * 1.6) > .6 ? 1 : 0;       // 轻微呼吸
     const cx = x + 17, cy = y + 20 + bob;
     // 肩膀与衣领
@@ -34,14 +33,18 @@
     R(cx - 1, ey + 4, 3, 1, O); R(cx - 2, ey + 3, 1, 1, O); R(cx + 2, ey + 3, 1, 1, O);
     R(cx - 7, ey + 2, 2, 1, '#e59a92'); R(cx + 5, ey + 2, 2, 1, '#e59a92');
   }
+  SG.registerPortrait('chef', chef);
 
-  function box() {
+  function box(who) {
     const { x, y, w, h } = BOX;
     R(x - 1, y - 1, w + 2, h + 2, '#1d1620');
     R(x, y, w, h, '#f7f2e6'); R(x + 1, y + 1, w - 2, h - 2, '#241b2c');
     R(x + 2, y + 2, w - 4, h - 4, '#1d1620');
     for (const [dx, dy] of [[1, 1], [w - 4, 1], [1, h - 4], [w - 4, h - 4]]) R(x + dx, y + dy, 3, 3, '#f2b134');
-    chef(x + 6, y + 8);
+    const px = x + 6, py = y + 8;                      // 头像框 + 底色
+    R(px, py, 34, 38, '#1d1620'); R(px + 1, py + 1, 32, 36, '#4a3a52'); R(px + 1, py + 1, 32, 18, '#5a4760');
+    const p = SG.reg.portraits[who] || SG.reg.portraits.chef;
+    p(px, py);
     R(x + 6, y + 48, 34, 1, '#4a3a52');
   }
 
@@ -54,9 +57,11 @@
   SG.dialog = {
     box: BOX,
     draw() {
-      if (!SG.tutorial.speaking()) return;
+      const tut = SG.tutorial.speaking(), story = SG.story && SG.story.talking();
+      if (!tut && !story) return;
       ctx.fillStyle = 'rgba(14,9,20,.45)'; ctx.fillRect(0, 0, SG.CFG.W, SG.CFG.H);
-      box(); arrow();
+      box(tut ? 'chef' : SG.story.speaker());
+      if (tut || SG.story.arrowOn()) arrow();
     },
   };
 })(window.SG = window.SG || {});

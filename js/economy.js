@@ -1,7 +1,8 @@
-// 经营结算：记账（售价、打赏、食材成本）、打烊算账、闭店判定、回档 / Game Over。
+// 经营结算：记账（售价、打赏、食材成本、剧情奖励）、打烊算账、闭店判定、回档 / Game Over。
 // 数值在 config.js 的 econ 与 run，每夜的房租水电在 data/levels.js。教学夜整个不记账。
 //   SG.econ.begin(level)               开店时调用：清空账本，记下夜初资金
 //   SG.econ.sale / waste / riceFail / fishMiss   玩法步骤调用，返回这次的金额
+//   SG.econ.extra(n)                   剧情奖励：记进当夜账本，打烊时入账（闭店回档时一起退回）
 //   SG.econ.close()                    打烊时调用：算账并写入存档，返回结算结果（练习夜返回 null）
 (function (SG) {
   const { CFG, G } = SG;
@@ -14,7 +15,7 @@
 
   function begin(level) {
     const d = SG.save.data, l = led();
-    l.sales = l.tips = l.foodServed = l.foodWaste = 0;
+    l.sales = l.tips = l.foodServed = l.foodWaste = l.extra = 0;
     l.on = !level.tutorial;
     // 只有"当前这一夜"才真正记账；回头重玩已通关的夜只算练习（不然就能刷钱）
     const idx = SG.LEVELS.indexOf(level);
@@ -30,7 +31,7 @@
     led().sales += price; led().tips += tip; led().foodServed += D.cost;
     return { price, tip };
   }
-  // 倒掉一份做好的寿司：付整份成本
+  // 倒掉一份做好的寿司（或炙烧烧焦）：付整份成本
   function waste(type) {
     if (!on()) return 0;
     const c = dish(type).cost; led().foodWaste += c; return c;
@@ -45,6 +46,11 @@
     if (!on()) return 0;
     const c = Math.round(dish(type).cost * E.fishMissRate); led().foodWaste += c; return c;
   }
+  // 剧情奖励：只在真记账的夜里算
+  function extra(n) {
+    if (!led().real) return 0;
+    led().extra = (led().extra || 0) + n; return n;
+  }
 
   // 打烊：算账，并按结果改存档。kind：'ok' 正常 | 'retry' 闭店回档 | 'gameover' 第三次闭店
   function close() {
@@ -53,13 +59,13 @@
     const d = SG.save.data, L = G.level, idx = SG.LEVELS.indexOf(L);
     const rent = L.rent || 0;
     const util = Math.round(rent * (L.utilityRate != null ? L.utilityRate : E.utilityRate));
-    const food = l.foodServed + l.foodWaste, revenue = l.sales + l.tips;
-    const profit = revenue - rent - util - food;
+    const food = l.foodServed + l.foodWaste, revenue = l.sales + l.tips, bonus = l.extra || 0;
+    const profit = revenue + bonus - rent - util - food;
     const before = d.money, after = before + profit;
     const closeLine = -Math.round(rent * CFG.run.closeLineRentMult);
     const closed = after < closeLine;
     const r = {
-      night: idx + 1, rent, util, sales: l.sales, tips: l.tips, revenue,
+      night: idx + 1, rent, util, sales: l.sales, tips: l.tips, revenue, extra: bonus,
       foodServed: l.foodServed, foodWaste: l.foodWaste, food, profit,
       before, after, closeLine, closed, kind: 'ok',
       tight: !closed && after <= closeLine * E.tightRatio,
@@ -83,5 +89,5 @@
     return r;
   }
 
-  SG.econ = { begin, sale, waste, riceFail, fishMiss, close, moneyMult, active: on };
+  SG.econ = { begin, sale, waste, riceFail, fishMiss, extra, close, moneyMult, active: on };
 })(window.SG = window.SG || {});

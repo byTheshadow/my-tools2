@@ -139,11 +139,12 @@
     gameover: '这间店，今晚是真的撑不住了。别难过，手艺和故事都还在，我们从头再来。',
   };
 
-  function ledgerRows(r) {
+   function ledgerRows(r) {
     const out = [];
     const add = (label, val, cls = '', sub = false) => out.push({ label, val, cls, sub });
     add('营业额', sgn(r.revenue), 'pos');
     if (r.tips > 0) add('含打赏', sgn(r.tips), 'pos', true);
+    if (r.extra > 0) add('剧情奖励', sgn(r.extra), 'pos');
     add('房租', sgn(-r.rent), 'neg');
     add('水电', sgn(-r.util), 'neg');
     add('食材', sgn(-r.food), 'neg');

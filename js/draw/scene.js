@@ -1,4 +1,4 @@
-// 整个画面的绘制顺序：墙 → 客人 → 柜台 → 传送带 → 砧板 → 寿司 → 特效 → 顶栏。
+// 整个画面的绘制顺序：墙 → 客人 → 柜台 → 传送带 → 砧板 → 寿司 → 特效 → 顶栏 → 互动画面 → 对话框。
 (function (SG) {
   const ctx = SG.ctx, G = SG.G, CFG = SG.CFG, { W, H } = CFG, RICE = CFG.rice;
   const { R } = SG.px;
@@ -17,9 +17,10 @@
     R(0, 102, W, 6, '#2d2231');
     SP.lantern(5, 26); SP.lantern(167, 26);
 
-    // 客人 + 气泡
+    // 客人 + 气泡 + 特殊客人的 ✦
     for (const s of G.seats) if (s.state !== 'empty') SP.customer(s);
     for (const s of G.seats) SP.bubble(s);
+    for (const s of G.seats) if (s.state === 'guest') SP.guestMark(s);
 
     // 柜台
     R(0, 106, W, 4, '#e8b77a'); R(0, 110, W, 14, '#a8653a');
@@ -54,6 +55,7 @@
         R(RICE.x - 17, RICE.y + 6, 35, 3, 'rgba(60,35,20,.2)');
         SP.bigSushi(RICE.x, RICE.y - b, G.sushi);
       }
+      if (st && st.drawOver) st.drawOver(SG.game.ctx);               // 画在寿司上面的（如炙烧的喷枪和火苗）
     }
     if (G.dropSlice) {
       const { rw } = SP.riceSize(G.sushi.riceP);
@@ -73,6 +75,7 @@
       R(0, 16, Math.round(W * r), 1, r > .2 ? '#f2b134' : ((t * 4 | 0) % 2 ? '#ff5a4a' : '#f2b134'));
     }
     ctx.restore();
-    SG.dialog.draw();                 // 澄姐的对话框画在最上层，不跟着抖动
+    if (G.mode === 'play') SG.story.drawAct();   // 剧情互动（收网等）盖住整个营业画面
+    SG.dialog.draw();                 // 对话框画在最上层，不跟着抖动
   };
 })(window.SG = window.SG || {});

@@ -1,5 +1,6 @@
-// 各种像素精灵：饭团、鱼片、寿司、客人、气泡、灯笼。
-// 新增鱼片花纹：在 SLICE_PATTERNS 里加一个函数，再在 data/ingredients.js 里用 pattern 名引用。
+// 各种像素精灵：饭团、鱼片、寿司、客人、气泡、灯笼、特殊客人的 ✦。
+// 新增鱼片花纹：在 SLICE_PATTERNS 里加一个函数，或者在剧情包里 SG.registerSlicePattern；再在食材里用 pattern 名引用。
+// 新增客人配饰（帽子等）：SG.registerAccessory(id, fn(x, y, seat))，客人的 look.acc 写上 id。
 (function (SG) {
   const ctx = SG.ctx, G = SG.G;
   const { R, ellipse } = SG.px;
@@ -50,8 +51,15 @@
     R(x0 + 1, y0 - 1, w - 2, h + 2, OUT); R(x0 - 1, y0 + 1, w + 2, h - 2, OUT); R(x0, y0, w, h, OUT);
     R(x0 + 1, y0, w - 2, h, f.base); R(x0, y0 + 1, w, h - 2, f.base);
     R(x0 + 1, y0 + h - 1, w - 2, 1, f.dark);
-    const pat = SLICE_PATTERNS[f.pattern];
+    const pat = SG.reg.patterns[f.pattern] || SLICE_PATTERNS[f.pattern];
     if (pat) pat(x0, y0, w, h, f);
+  }
+
+  // 炙烧：鱼片被烤出来的焦色（k 0~1 越大越焦）
+  function charOverlay(cx, cy, w, h, k) {
+    const x0 = Math.round(cx - w / 2), y0 = Math.round(cy - h / 2);
+    ctx.fillStyle = `rgba(60,25,10,${(0.1 + 0.5 * k).toFixed(2)})`;
+    ctx.fillRect(x0 + 1, y0, w - 2, h); ctx.fillRect(x0, y0 + 1, w, h - 2);
   }
 
   function nori(cx, top, bottom) {
@@ -67,6 +75,7 @@
     if (s.type) {
       const top = cy - rh, sw = rw * 2 + 6;
       slice(cx + s.dx, top - 1, s.type, sw, 8);
+      if (s.char) charOverlay(cx + s.dx, top - 1, sw, 8, s.char);       // 炙烧过的鱼片带焦色
       if (SG.INGREDIENTS[s.type].nori) nori(cx + s.dx, top - 6, cy + rh);
     }
   }
@@ -103,6 +112,8 @@
     R(x - 7, y - 30, 14, 14, O);
     R(x - 6, y - 29, 12, 13, s.skin);
     R(x - 7, y - 33, 14, 5, s.hair); R(x - 8, y - 31, 16, 3, s.hair); R(x - 8, y - 28, 2, 4, s.hair); R(x + 6, y - 28, 2, 4, s.hair);
+    const acc = s.acc && SG.reg.accessories[s.acc];                      // 帽子等配饰（特殊客人）
+    if (acc) acc(x, y, s);
     const ey = y - 23, ink = '#1d1620';
     const blink = ((t * 0.8 + s.x * 0.013) % 3) < 0.1;
     if (s.mood === 'happy') {
@@ -117,7 +128,7 @@
     } else {
       if (blink) { R(x - 4, ey + 1, 2, 1, ink); R(x + 2, ey + 1, 2, 1, ink); }
       else { R(x - 4, ey, 2, 2, ink); R(x + 2, ey, 2, 2, ink); }
-      const worried = s.state === 'wait' && s.pat / s.maxP < 0.3;
+      const worried = s.state === 'wait' && !s.npc && s.pat / s.maxP < 0.3;
       if (worried) {
         R(x - 1, ey + 5, 3, 1, ink); R(x - 2, ey + 4, 1, 1, ink); R(x + 2, ey + 4, 1, 1, ink);
         if ((t * 3 | 0) % 2) { R(x + 7, ey - 3, 1, 1, '#7ec8ff'); R(x + 6, ey - 2, 3, 2, '#7ec8ff'); }
@@ -125,8 +136,20 @@
     }
   }
 
-  // 订单气泡 + 耐心条
+  // 四角星 ✦：k 是臂长
+  function star(cx, cy, k, c) { R(cx, cy - k, 1, 2 * k + 1, c); R(cx - k, cy, 2 * k + 1, 1, c); R(cx - 1, cy - 1, 3, 3, c); }
+
+  // 特殊客人头顶的 ✦：点它才开始对话
+  function guestMark(s) {
+    const x = s.x, y = 56 + Math.round(Math.sin(G.t * 3) * 2), k = 4 + ((G.t * 3 | 0) % 2);
+    ctx.fillStyle = 'rgba(242,177,52,.18)'; ctx.fillRect(x - 9, y - 9, 18, 18);
+    star(x, y, k + 1, '#2a1e18'); star(x, y, k, '#f2b134'); R(x, y, 1, 1, '#ffffff');
+    if ((G.t * 2 | 0) % 2) { R(x + 8, y - 7, 1, 1, '#fff3c4'); R(x - 8, y + 6, 1, 1, '#fff3c4'); }
+  }
+
+  // 订单气泡 + 耐心条（特殊客人的气泡角上多一颗小 ✦）
   function bubble(s) {
+    if (!s.type) return;
     if (!(s.state === 'wait' || (s.state === 'arrive' && s.anim > .6))) return;
     const x = s.x, O = '#2a1e18';
     const glow = G.phase === 'serve' && G.sushi && G.sushi.type === s.type && (G.t * 6 | 0) % 2 === 0;
@@ -134,11 +157,12 @@
     R(x - 12, 42, 24, 18, '#fffaf0');
     R(x - 6, 61, 5, 1, O); R(x - 5, 61, 3, 1, '#fffaf0'); R(x - 5, 62, 3, 1, O); R(x - 4, 62, 1, 1, '#fffaf0'); R(x - 4, 63, 1, 1, O);
     miniSushi(x, 51, s.type);
+    if (s.npc) star(x + 10, 44, 2, '#f2b134');
     const r = Math.max(0, s.pat / s.maxP);
     R(x - 12, 35, 24, 4, O);
     R(x - 11, 36, Math.round(22 * r), 2, r > .5 ? '#7fd36b' : r > .25 ? '#f2b134' : '#ff5a4a');
   }
 
   SG.SLICE_PATTERNS = SLICE_PATTERNS;
-  SG.sprites = { riceSize, rice, slice, nori, bigSushi, miniSushi, lantern, customer, bubble };
+  SG.sprites = { riceSize, rice, slice, charOverlay, nori, bigSushi, miniSushi, lantern, customer, bubble, guestMark };
 })(window.SG = window.SG || {});

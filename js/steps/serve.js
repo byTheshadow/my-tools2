@@ -1,7 +1,9 @@
 // 步骤：上菜。点点了这道寿司的客人得分；不要的点右下角倒掉。完成后 c.restart() 回到做法的第一步。
+// 炙烧等额外步骤做出的品质（sushi.torchQ）也算进得分和"完美寿司"。
 (function (SG) {
   const { CFG, G, pop, burst, sfx } = SG;
   const RICE = CFG.rice;
+  const EXTRA_SCORE = { perfect: 30, good: 15, meh: 5 };    // 炙烧的得分，和放鱼片的档位一致
 
   function serveTo(c, i) {
     const s = G.seats[i], sushi = G.sushi, SC = CFG.score;
@@ -13,8 +15,9 @@
       c.ev('fail');
       return;
     }
-    const isPerfect = sushi.riceQ === 'perfect' && sushi.fishQ === 'perfect';
+    const isPerfect = sushi.riceQ === 'perfect' && sushi.fishQ === 'perfect' && (sushi.torchQ == null || sushi.torchQ === 'perfect');
     let base = SC.rice[sushi.riceQ] + SC.fish[sushi.fishQ] + SC.serveBase + Math.floor(s.pat / s.maxP * SC.patienceMax);
+    if (sushi.torchQ) base += EXTRA_SCORE[sushi.torchQ] || 0;
     if (isPerfect) { base = Math.round(base * SC.perfectMult); G.perfectSushi++; }
     G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
     const gained = Math.round(base * c.api.comboMult());
@@ -27,6 +30,7 @@
     G.flying.push({ ...sushi, x0: RICE.x, y0: RICE.y, x1: s.x, y1: 98, t: 0 });
     pop('+' + gained, s.x, 46, 'gain', 8);
     sfx.coin(); SG.buzz(15);
+    if (s.npc) SG.story.served(s);                       // 特殊客人的专属菜做成了：章节完成、菜式解锁
     c.ev('serve');
     c.restart();
   }

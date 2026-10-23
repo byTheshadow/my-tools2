@@ -5,10 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>深夜寿司屋</title>
 <meta name="theme-color" content="#120e1e">
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/story.css">
 </head>
 <body>
 <div id="wrap">
@@ -17,6 +19,7 @@
   <div id="hint"></div>
   <div id="task"></div>
   <div id="talk"></div>
+  <div id="choices"></div>
   <div id="fx"></div>
   <div id="ov"><div class="panel" id="panel"></div></div>
 </div>
@@ -32,7 +35,8 @@
 <script src="js/data/lore.js"></script>
 <script src="js/data/howto.js"></script>
 <script src="js/data/tutorial.js"></script>
-<!-- 剧情：每位特殊客人一个文件，写完在这里加一行 <script src="js/data/stories/xxx.js"></script> -->
+<!-- 特殊客人：每位一个文件（剧情 + 新食材 + 头像），写完在这里加一行 -->
+<script src="js/data/stories/songshu.js"></script>
 <script src="js/save.js"></script>
 <script src="js/util.js"></script>
 <script src="js/canvas.js"></script>
@@ -48,8 +52,12 @@
 <!-- 玩法步骤：新玩法写成一个步骤模块，在这里加一行 -->
 <script src="js/steps/rice.js"></script>
 <script src="js/steps/fish.js"></script>
+<script src="js/steps/torch.js"></script>
 <script src="js/steps/serve.js"></script>
+<!-- 剧情互动小游戏：新互动写成一个模块，在这里加一行 -->
+<script src="js/interacts/reel.js"></script>
 <script src="js/tutorial.js"></script>
+<script src="js/story.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/input.js"></script>
