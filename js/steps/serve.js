@@ -1,10 +1,10 @@
 // 步骤：上菜。点点了这道寿司的客人得分；不要的点右下角倒掉。完成后 c.restart() 回到做法的第一步。
-// 炙烧等额外步骤做出的品质（sushi.torchQ）也算进得分和"完美寿司"。
+// 炙烧、围海苔等额外步骤做出的品质（sushi.torchQ / sushi.wrapQ）也算进得分和"完美寿司"。
 // 座位数会随扩建升级变化（3~5），所以"点到哪位客人"一律按 G.seats[i].x 就近判断，不再写死三等份。
 (function (SG) {
   const { CFG, G, pop, burst, sfx } = SG;
   const RICE = CFG.rice;
-  const EXTRA_SCORE = { perfect: 30, good: 15, meh: 5 };    // 炙烧的得分，和放鱼片的档位一致
+  const EXTRA_SCORE = { perfect: 30, good: 15, meh: 5 };    // 炙烧 / 围海苔的得分，和放鱼片的档位一致
 
   // 横坐标最近的座位下标。只看座位位置，不看客人状态：
   // 点哪个座位就是哪个座位，那位客人没在等菜就什么都不发生，不会"溜"给隔壁。
@@ -27,9 +27,12 @@
       c.ev('fail');
       return;
     }
-    const isPerfect = sushi.riceQ === 'perfect' && sushi.fishQ === 'perfect' && (sushi.torchQ == null || sushi.torchQ === 'perfect');
+    const isPerfect = sushi.riceQ === 'perfect' && sushi.fishQ === 'perfect'
+      && (sushi.torchQ == null || sushi.torchQ === 'perfect')
+      && (sushi.wrapQ == null || sushi.wrapQ === 'perfect');
     let base = SC.rice[sushi.riceQ] + SC.fish[sushi.fishQ] + SC.serveBase + Math.floor(s.pat / s.maxP * SC.patienceMax);
     if (sushi.torchQ) base += EXTRA_SCORE[sushi.torchQ] || 0;
+    if (sushi.wrapQ) base += EXTRA_SCORE[sushi.wrapQ] || 0;
     if (isPerfect) { base = Math.round(base * SC.perfectMult); G.perfectSushi++; }
     G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
     const gained = Math.round(base * c.api.comboMult());

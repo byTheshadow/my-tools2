@@ -10,6 +10,7 @@
 //   difficulty         难度曲线，公式见 docs/RULES.md 第 7 节
 //   ranks              结算称号，按 min 分数从小到大
 //   npcs               这一夜允许登场的特殊客人（剧情 id，见 data/stories/）；没写 = 不会有特殊客人
+//                      一夜最多来一位，列表里靠前注册的、条件满足的先来
 //   tutorial           true = 教学夜（不记账、不记最高分、由 tutorial.js 引导）
 //
 // 关于 perSec：这些系数是"每秒"的衰减/增长，一夜 180 秒，数值按 180 秒调过。
@@ -82,6 +83,9 @@
   //   第 7 夜 ×1.50：22 → 33，毛利率 45%
   //   第 8 夜 ×1.70：22 → 37，毛利率 38%
   // 闭店线 = −(当夜房租 × 2)，所以房租也是容错线，调它等于同时调难度。
+  //
+  // 特殊客人排期：松叔第 2~4 夜；小林健太第 4~8 夜（单夜上菜 ≥ 10 才来）。
+  // 第 4 夜两人都列了：松叔还有章节没走完时他先来，否则小林来。
   SG.LEVELS = [
     {
       id: 'l1',
@@ -124,7 +128,7 @@
       duration: 180,
       phases: 'std',
       rent: 600,
-      npcs: ['songshu'],
+      npcs: ['songshu', 'xiaolin'],
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(4),
@@ -138,6 +142,7 @@
       rent: 760,
       utilityRate: 0.12,
       costMult: 1.20,
+      npcs: ['xiaolin'],
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(5),
@@ -151,6 +156,7 @@
       rent: 950,
       utilityRate: 0.12,
       costMult: 1.35,
+      npcs: ['xiaolin'],
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(6),
@@ -164,6 +170,7 @@
       rent: 1150,
       utilityRate: 0.15,
       costMult: 1.50,
+      npcs: ['xiaolin'],
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(7),
@@ -177,6 +184,7 @@
       rent: 1400,
       utilityRate: 0.15,
       costMult: 1.70,
+      npcs: ['xiaolin'],
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(8),

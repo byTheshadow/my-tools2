@@ -1,6 +1,7 @@
 // 各种像素精灵：饭团、鱼片、寿司、客人、气泡、灯笼、特殊客人的 ✦。
 // 新增鱼片花纹：在 SLICE_PATTERNS 里加一个函数，或者在剧情包里 SG.registerSlicePattern；再在食材里用 pattern 名引用。
 // 新增客人配饰（帽子等）：SG.registerAccessory(id, fn(x, y, seat))，客人的 look.acc 写上 id。
+// 军舰卷：食材里写 gunkan: true，寿司就会围一圈海苔（大寿司按 sushi.wrapK 围了多少，小寿司直接围满）。
 (function (SG) {
   const ctx = SG.ctx, G = SG.G;
   const { R, ellipse } = SG.px;
@@ -68,12 +69,24 @@
     R(cx - 2, top, 1, bottom - top + 1, '#2f4639');
   }
 
+  // 军舰卷的海苔围边：围住饭团的侧面，k 0~1 是围了多少（从左往右一圈圈围上去）。画在饭团之后、鱼籽之前，籽堆在上沿
+  function gunkanBand(cx, cy, rw, rh, k) {
+    const w = Math.round((rw * 2 + 3) * Math.max(0, Math.min(1, k)));
+    if (w <= 0) return;
+    const x0 = cx - rw - 1, top = cy - rh - 2, h = rh * 2 + 4;
+    R(x0, top, w, h, OUT);
+    R(x0 + 1, top + 1, Math.max(0, w - 2), h - 2, '#1e2b25');
+    R(x0 + 1, top + 1, Math.max(0, w - 2), 1, '#2f4639');                      // 上沿反光
+    for (let i = 3; i < w - 1; i += 5) R(x0 + i, top + 2, 1, h - 4, '#2a3e33');   // 海苔的竖纹
+  }
+
   // 砧板上的大寿司（s = G.sushi）
   function bigSushi(cx, cy, s) {
     const { rw, rh } = riceSize(s.riceP);
     rice(cx, cy, rw, rh, s.lop || 0);
     if (s.type) {
       const top = cy - rh, sw = rw * 2 + 6;
+      if (SG.INGREDIENTS[s.type].gunkan) gunkanBand(cx, cy, rw, rh, s.wrapK || 0);
       slice(cx + s.dx, top - 1, s.type, sw, 8);
       if (s.char) charOverlay(cx + s.dx, top - 1, sw, 8, s.char);       // 炙烧过的鱼片带焦色
       if (SG.INGREDIENTS[s.type].nori) nori(cx + s.dx, top - 6, cy + rh);
@@ -83,6 +96,7 @@
   // 气泡里 / 飞行中的小寿司
   function miniSushi(cx, cy, type) {
     rice(cx, cy + 2, 6, 3);
+    if (SG.INGREDIENTS[type].gunkan) gunkanBand(cx, cy + 2, 6, 3, 1);
     slice(cx, cy - 1, type, 14, 4);
     if (SG.INGREDIENTS[type].nori) nori(cx, cy - 4, cy + 5);
   }
@@ -164,5 +178,5 @@
   }
 
   SG.SLICE_PATTERNS = SLICE_PATTERNS;
-  SG.sprites = { riceSize, rice, slice, charOverlay, nori, bigSushi, miniSushi, lantern, customer, bubble, guestMark };
+  SG.sprites = { riceSize, rice, slice, charOverlay, nori, gunkanBand, bigSushi, miniSushi, lantern, customer, bubble, guestMark };
 })(window.SG = window.SG || {});

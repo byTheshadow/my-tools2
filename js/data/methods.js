@@ -5,4 +5,5 @@
 (function (SG) {
   SG.registerMethod('nigiri', { name: '握寿司', steps: ['rice', 'fish', 'serve'] });
   SG.registerMethod('aburi',  { name: '炙烧',   steps: ['rice', 'fish', 'torch', 'serve'] });
+  SG.registerMethod('gunkan', { name: '军舰卷', steps: ['rice', 'fish', 'wrap', 'serve'] });
 })(window.SG = window.SG || {});
