@@ -1,15 +1,21 @@
 // 经营结算：记账（售价、打赏、食材成本、剧情奖励）、打烊算账、闭店判定、回档 / Game Over。
 // 数值在 config.js 的 econ 与 run，每夜的房租水电在 data/levels.js。教学夜整个不记账。
 // 店铺升级：招财猫加打赏（tipRateAdd / tipChance）、议价减房租（rentCut），见 js/shop.js。
+// 进货价：关卡可写 costMult（不写 = 1.0），所有食材成本按它乘一遍——上菜的、倒掉的、做坏的都算。
 //   SG.econ.begin(level)               开店时调用：清空账本，记下夜初资金
 //   SG.econ.sale / waste / riceFail / fishMiss   玩法步骤调用，返回这次的金额
 //   SG.econ.extra(n)                   剧情奖励：记进当夜账本，打烊时入账（闭店回档时一起退回）
 //   SG.econ.close()                    打烊时调用：算账并写入存档，返回结算结果（练习夜返回 null）
+//   SG.econ.costMult()                 当前这一夜的进货价系数（结算页 / HUD 想显示就读它）
 (function (SG) {
   const { CFG, G } = SG;
   const E = CFG.econ, led = () => G.ledger;
   const on = () => !!led().on;
   const dish = id => SG.dishOf(id);
+
+  // 进货价系数：鱼价一夜比一夜贵，毛利被压薄，浪费也更肉疼
+  const costK = () => { const m = G.level && G.level.costMult; return m > 0 ? m : 1; };
+  const costOf = type => Math.round(dish(type).cost * costK());
 
   // 售价倍率：比计分倍率温和，避免高连击把房租变成摆设
   const moneyMult = combo => 1 + Math.min(combo, E.moneyComboCap) * E.moneyComboStep;
@@ -34,23 +40,24 @@
       const ch = SG.shop.fx('tipChance');
       if (ch > 0 && Math.random() < ch) tip = Math.max(1, Math.round(D.price * rate * E.luckyTipRate));
     }
-    led().sales += price; led().tips += tip; led().foodServed += D.cost;
+    led().sales += price; led().tips += tip; led().foodServed += costOf(type);
     return { price, tip };
   }
   // 倒掉一份做好的寿司（或炙烧烧焦）：付整份成本
   function waste(type) {
     if (!on()) return 0;
-    const c = dish(type).cost; led().foodWaste += c; return c;
+    const c = costOf(type); led().foodWaste += c; return c;
   }
   // 捏饭团失败：饭倒掉
   function riceFail() {
     if (!on()) return 0;
-    led().foodWaste += E.riceFailCost; return E.riceFailCost;
+    const c = Math.round(E.riceFailCost * costK());
+    led().foodWaste += c; return c;
   }
   // 鱼片没放上掉了：付该鱼片成本的一半
   function fishMiss(type) {
     if (!on()) return 0;
-    const c = Math.round(dish(type).cost * E.fishMissRate); led().foodWaste += c; return c;
+    const c = Math.round(costOf(type) * E.fishMissRate); led().foodWaste += c; return c;
   }
   // 剧情奖励：只在真记账的夜里算
   function extra(n) {
@@ -74,7 +81,7 @@
     const closed = after < closeLine;
     const r = {
       night: idx + 1, rent, rentFull, rentCut, util, sales: l.sales, tips: l.tips, revenue, extra: bonus,
-      foodServed: l.foodServed, foodWaste: l.foodWaste, food, profit,
+      foodServed: l.foodServed, foodWaste: l.foodWaste, food, profit, costMult: costK(),
       before, after, closeLine, closed, kind: 'ok',
       tight: !closed && after <= closeLine * E.tightRatio,
       advanced: false, retriesLeft: CFG.run.retryMax - d.retries,
@@ -97,5 +104,5 @@
     return r;
   }
 
-  SG.econ = { begin, sale, waste, riceFail, fishMiss, extra, close, moneyMult, active: on };
+  SG.econ = { begin, sale, waste, riceFail, fishMiss, extra, close, moneyMult, costMult: costK, active: on };
 })(window.SG = window.SG || {});

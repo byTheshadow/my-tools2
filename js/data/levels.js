@@ -4,6 +4,7 @@
 //   phases             一夜之内的节奏分段，见 js/pace.js。'std' = 开门 30 / 正常 90 / 高峰 45 / 收尾 15
 //   rent               房租（经营结算用）
 //   utilityRate        水电占房租的比例；不写则用 config.js 的 econ.utilityRate
+//   costMult           进货价系数：食材成本整体乘这个数（上菜的、倒掉的、做坏的都算）。不写 = 1.0
 //   startIngredients   开局可用食材（id 见 ingredients.js）
 //   unlocks            [{at: 秒, id}] 到时间解锁新食材
 //   difficulty         难度曲线，公式见 docs/RULES.md 第 7 节
@@ -74,7 +75,12 @@
     ranks: [{ min: 0, name: '见习学徒' }],
   };
 
-  // 房租逐夜上涨；水电比例后期从 10% 提到 15%，让后几夜的固定开销更有存在感。
+  // 房租逐夜上涨；水电比例后期从 10% 提到 15%。
+  // 进货价（costMult）从第 5 夜开始涨：前四夜毛利照旧，后四夜每一份都要算账，浪费也更肉疼。
+  //   第 5 夜 ×1.20：三文鱼成本 22 → 26，毛利率 63% → 56%
+  //   第 6 夜 ×1.35：22 → 30，毛利率 51%
+  //   第 7 夜 ×1.50：22 → 33，毛利率 45%
+  //   第 8 夜 ×1.70：22 → 37，毛利率 38%
   // 闭店线 = −(当夜房租 × 2)，所以房租也是容错线，调它等于同时调难度。
   SG.LEVELS = [
     {
@@ -131,6 +137,7 @@
       phases: 'std',
       rent: 760,
       utilityRate: 0.12,
+      costMult: 1.20,
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(5),
@@ -143,6 +150,7 @@
       phases: 'std',
       rent: 950,
       utilityRate: 0.12,
+      costMult: 1.35,
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(6),
@@ -155,6 +163,7 @@
       phases: 'std',
       rent: 1150,
       utilityRate: 0.15,
+      costMult: 1.50,
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(7),
@@ -167,6 +176,7 @@
       phases: 'std',
       rent: 1400,
       utilityRate: 0.15,
+      costMult: 1.70,
       startIngredients: BASE.concat('shrimp'),
       unlocks: [],
       difficulty: diffOf(8),
