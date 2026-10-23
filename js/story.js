@@ -223,7 +223,7 @@
       else if (R.mode === 'act' && R.inst && R.inst.key) R.inst.key(code, true);
       return true;
     }
-    if (isDown && /^Digit[123]$/.test(code)) {     // 键盘：按 1 2 3 点座位上的 ✦
+    if (isDown && /^Digit[1-5]$/.test(code)) {     // 键盘：按 1~5 点座位上的 ✦
       const s = G.seats[+code.slice(-1) - 1];
       if (s && s.state === 'guest') { open(s); return true; }
     }

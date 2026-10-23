@@ -1,9 +1,21 @@
 // 步骤：上菜。点点了这道寿司的客人得分；不要的点右下角倒掉。完成后 c.restart() 回到做法的第一步。
 // 炙烧等额外步骤做出的品质（sushi.torchQ）也算进得分和"完美寿司"。
+// 座位数会随扩建升级变化（3~5），所以"点到哪位客人"一律按 G.seats[i].x 就近判断，不再写死三等份。
 (function (SG) {
   const { CFG, G, pop, burst, sfx } = SG;
   const RICE = CFG.rice;
   const EXTRA_SCORE = { perfect: 30, good: 15, meh: 5 };    // 炙烧的得分，和放鱼片的档位一致
+
+  // 横坐标最近的座位下标。优先在"等上菜"的客人里找；一个都没有就返回 -1
+  function nearestSeat(x) {
+    let best = -1, bd = 1e9;
+    G.seats.forEach((s, i) => {
+      if (s.state !== 'wait') return;
+      const d = Math.abs(s.x - x);
+      if (d < bd) { bd = d; best = i; }
+    });
+    return best;
+  }
 
   function serveTo(c, i) {
     const s = G.seats[i], sushi = G.sushi, SC = CFG.score;
@@ -48,12 +60,12 @@
     canDiscard: true,                       // 垃圾桶高亮
 
     down(c, x, y) {
-      if (y < 124) serveTo(c, Math.min(2, Math.max(0, Math.floor(x / 60))));
+      if (y < 124) { const i = nearestSeat(x); if (i >= 0) serveTo(c, i); }
       else if (x >= 148 && y >= 288) discard(c);
     },
     key(c, code, isDown) {
       if (!isDown) return;
-      if (/^Digit[123]$/.test(code)) serveTo(c, +code.slice(-1) - 1);
+      if (/^Digit[1-5]$/.test(code)) serveTo(c, +code.slice(-1) - 1);   // 1~5 号座位，不存在的座位 serveTo 里直接忽略
       else if (code === 'KeyX') discard(c);
     },
   });
